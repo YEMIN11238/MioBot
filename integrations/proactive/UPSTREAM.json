@@ -1,0 +1,34 @@
+{
+  "repository": "https://github.com/Pancakes-Labs/astrbot_plugin_proactive_chat",
+  "previousRepository": "https://github.com/DBJD-CR/astrbot_plugin_proactive_chat",
+  "revision": "635fc18eeb84e3c7b58661425359244552286835",
+  "version": "v1.2.6",
+  "archive": "https://codeload.github.com/Pancakes-Labs/astrbot_plugin_proactive_chat/zip/635fc18eeb84e3c7b58661425359244552286835",
+  "archiveSha256": "e61c38e87812fc617c73124e1ce1d3af33817f94920f2a65f3ac30818d064a4e",
+  "license": "AGPL-3.0",
+  "author": "DBJD-CR",
+  "containsCredentials": false,
+  "containsUserHistory": false,
+  "runtimeCoreFiles": [
+    {
+      "path": "core/llm_adapter.py",
+      "sha256": "9fe95af85bce22b2e1c19bc43a7bf65b3c90ee285ebab4c562b9a3d066d85b7c",
+      "unchanged": true
+    },
+    {
+      "path": "core/proactive_event.py",
+      "sha256": "85aba23e56934eb98e2c9efccafe9463fc02689520687bb3dd5139f2492ff244",
+      "unchanged": true
+    },
+    {
+      "path": "utils/time_utils.py",
+      "sha256": "ef220e663debed6b9ad993b4ea53f0a09483602c752c0060fa3aae4325886bab",
+      "unchanged": true
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0",
+      "unchanged": true
+    }
+  ]
+}

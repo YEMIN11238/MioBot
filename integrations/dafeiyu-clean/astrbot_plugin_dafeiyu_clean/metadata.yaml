@@ -1,0 +1,29 @@
+name: astrbot_plugin_dafeiyu_clean
+display_name: 大肥鱼回复防串台（MioBot 适配）
+desc: 复用 zexuan604 的回复清理插件，清理助手误漏的内部提醒和工具标记；保留代码示例，按当前助手插件权限运行。
+help: 由 MioBot 按助手配置启用；不添加语音、表情、主动消息或 QQ 操作。
+version: v0.1.1-miobot
+author: zexuan604; MioBot compatibility integration
+repo: https://github.com/zexuanw958-svg/dafeiyu-config-pack
+astrbot_version: '>=4.29.3,<4.30'
+support_platforms:
+  - aiocqhttp
+  - qq_official
+  - qq_official_webhook
+  - telegram
+  - wecom
+  - wecom_ai_bot
+  - lark
+  - dingtalk
+  - discord
+  - slack
+  - kook
+  - vocechat
+  - weixin_official_account
+  - satori
+  - misskey
+  - line
+  - matrix
+  - weixin_oc
+  - mattermost
+  - webchat

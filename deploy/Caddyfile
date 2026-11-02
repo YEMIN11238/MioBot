@@ -1,0 +1,10 @@
+{$MIOBOT_DOMAIN} {
+    encode zstd gzip
+    reverse_proxy miobot:4318 {
+        flush_interval -1
+    }
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy no-referrer
+    }
+}

@@ -1,0 +1,26 @@
+{
+  "repository": "https://github.com/SIiOC/astrbot-plugin-humanizer",
+  "commit": "38e732119b309164636671cb715c7a43575b68a7",
+  "version": "4.1.9",
+  "license": "AGPL-3.0",
+  "originalMainSha256": "0c7ef012ba4a95140401699893ffd524002f0d4d26f4af01b6615d2eb8dc985b",
+  "archiveUrl": "https://codeload.github.com/SIiOC/astrbot-plugin-humanizer/tar.gz/38e732119b309164636671cb715c7a43575b68a7",
+  "integrationRevision": "miobot.1",
+  "managedEnv": "MIOBOT_MANAGED_PERSONALITY=1",
+  "modifiedPaths": [
+    "main.py",
+    "humanizer_core/rules_zh.py",
+    "requirements.txt"
+  ],
+  "addedPaths": [
+    "miobot_humanizer_compat.py",
+    "styles/MioBot自然对话.json"
+  ],
+  "integrationFileSha256": {
+    "main.py": "f5ceada6179bd0c75236aa5ef7ff0d1b9c8daf0ca7fcc16319a2ef53e096dc28",
+    "humanizer_core/rules_zh.py": "a8bb292bebcc06dd11ceafa0452fcb406d07e69f67b2b7bf4b176d0720778ff6",
+    "requirements.txt": "c4a696fbf2509752d07efc1db954186bf4a632176127939497d91bdc0f2cabc8",
+    "miobot_humanizer_compat.py": "ecd3f53c9c37d4fd255ccb3e83759fdee83f334d15bc614313da772ab6db5440",
+    "styles/MioBot自然对话.json": "43a7870d7ffae9b7ead447d84f437cbd1a096b19b85bd7b40f14309bc39fff28"
+  }
+}

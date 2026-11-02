@@ -1,0 +1,5 @@
+name: astrbot_plugin_miobot_games
+display_name: MioBot Minecraft 资料工具
+desc: Minecraft Java 1.21.8 物品、合成配方与直接材料计算；不连接或操作游戏。
+version: v0.1.0
+author: MioBot

@@ -1,0 +1,65 @@
+{
+  "style": {
+    "enabled": true,
+    "active_style": "MioBot自然对话",
+    "auto_build_default": false,
+    "enable_retrieval": false,
+    "create_kb": false,
+    "auto_extract_on_upload": false,
+    "rebuild_style": false,
+    "rules_enable": true,
+    "qc_enable": false,
+    "lang_mirror_enable": true,
+    "lang_mirror_min_msgs": 30,
+    "lang_mirror_topk": 2,
+    "debug": false
+  },
+  "humanize": {
+    "enabled": true,
+    "remove_emoji": false,
+    "min_length": 8,
+    "debug": false
+  },
+  "time": {
+    "awareness_mode": "custom",
+    "enable_gap": true,
+    "include_wall_clock": true,
+    "gap_granularity": "mixed",
+    "gap_threshold_minutes": 30,
+    "rhythm_enable": true,
+    "continuity_inject": true,
+    "include_calendar": false,
+    "include_first_seen": false,
+    "include_last_chat": false,
+    "enable_life": false,
+    "enable_llm_timeline": false,
+    "mood_enabled": false,
+    "debug": false
+  },
+  "emotion": {
+    "emotion_mode": "custom",
+    "emotion_enable": true,
+    "emotion_heat_drift_enable": true,
+    "emotion_intensity_cap": 0.35,
+    "emotion_hot_drift": 0.12,
+    "emotion_cold_drift": 0,
+    "emotion_soothe_boost": 0.1,
+    "emotion_reunion_inject": false
+  },
+  "proactive": {
+    "enable_proactive": false,
+    "proactive_preset": "custom",
+    "proactive_track_groups": false,
+    "proactive_followup_enable": false,
+    "proactive_pout_on_unanswered": false
+  },
+  "typing": {
+    "enable": false,
+    "split_enable": false,
+    "debounce_enable": false,
+    "enable_adaptive_debounce": false,
+    "enable_typing_detection": false,
+    "enable_recall_filter": false,
+    "send_discipline_enabled": false
+  }
+}

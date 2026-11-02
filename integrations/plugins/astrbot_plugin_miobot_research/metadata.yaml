@@ -1,0 +1,9 @@
+name: astrbot_plugin_miobot_research
+display_name: MioBot 网页与文件资料
+desc: 使用配置的Tavily服务检索网页摘要，以及本地安全解析私人上传文件；默认不开启。
+version: v0.1.0
+author: MioBot
+license: AGPL-3.0-only
+astrbot_version: ">=4.29.3,<5"
+support_platforms:
+  - webchat

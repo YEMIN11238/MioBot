@@ -1,0 +1,9 @@
+name: astrbot_plugin_miobot_media
+display_name: 语音与专属表情
+desc: 用户明确要求后生成语音，或选择当前助手授权图库中的表情；默认关闭，不直接发送到外部平台。
+version: v0.1.0
+author: MioBot
+license: AGPL-3.0-only
+astrbot_version: ">=4.29.3,<5"
+support_platforms:
+  - webchat

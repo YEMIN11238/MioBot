@@ -1,0 +1,4 @@
+# v3.7.0 历法感知（农历/节气/传统节日）
+# 纯 Python 库、无重依赖；缺失时历法功能静默关闭，插件其余功能不受影响
+# MioBot leaves calendar features disabled and adds no dependency here.
+# Upstream optionally lists lunar_python; see ../NOTICE.md for the integration.

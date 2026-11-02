@@ -1,0 +1,17 @@
+/* The desktop window owns its outer shape; the web preview keeps its matte. */
+.native-titlebar{display:none}
+html[data-shell="desktop"],html[data-shell="desktop"] body,html[data-shell="desktop"] #root{width:100%;height:100%;margin:0;overflow:hidden;background:#fbfbfe}
+html[data-shell="desktop"] .desktop{width:100%;height:100dvh;min-height:0;padding:0;display:grid;grid-template-rows:44px minmax(0,1fr);background:#fbfbfe;overflow:hidden}
+html[data-shell="desktop"] .native-titlebar{position:relative;display:flex;align-items:center;justify-content:center;height:44px;min-width:0;padding:0 20px 0 96px;background:linear-gradient(90deg,#faf8fe,#fdfcfe 52%,#faf9fd);border-bottom:1px solid #eeebf6;-webkit-app-region:drag;user-select:none}
+.native-window-title{position:absolute;left:50%;transform:translateX(-50%);font-size:12px;font-weight:500;letter-spacing:.2px;color:#80738f;white-space:nowrap}
+.native-window-status{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:10px;color:#aca0b9;white-space:nowrap}
+.native-window-status .dot{width:6px;height:6px;min-width:6px}
+html[data-shell="desktop"] .native-titlebar button,html[data-shell="desktop"] .native-titlebar input,html[data-shell="desktop"] .native-titlebar a{-webkit-app-region:no-drag}
+html[data-shell="desktop"] .app-shell{width:100%;height:100%;min-height:0;border:0;border-radius:0;outline:none;box-shadow:none;overflow:hidden}
+html[data-shell="desktop"] .rail{border-radius:0;min-height:0}
+html[data-shell="desktop"] .sidebar,html[data-shell="desktop"] .workspace,html[data-shell="desktop"] .chat-page,html[data-shell="desktop"] .chat-main,html[data-shell="desktop"] .chat-scroll,html[data-shell="desktop"] .recent,html[data-shell="desktop"] .context-panel{min-height:0}
+html[data-shell="desktop"] .page{min-height:0;overscroll-behavior:contain}
+html[data-shell="desktop"] .chat-scroll,html[data-shell="desktop"] .recent{overscroll-behavior:contain}
+html[data-shell="desktop"] .composer{flex-shrink:0}
+html[data-shell="desktop"] .chat-header{flex-shrink:0}
+@media(max-height:740px){html[data-shell="desktop"] .rail{gap:15px;padding-top:14px}html[data-shell="desktop"] .rail-links{gap:7px}html[data-shell="desktop"] .rail button:not(.brand-orb){min-height:58px;padding-top:9px;padding-bottom:9px}html[data-shell="desktop"] .sidebar{padding-top:18px}html[data-shell="desktop"] .wordmark{margin-bottom:20px}html[data-shell="desktop"] .welcome{min-height:125px}html[data-shell="desktop"] .chat-header{min-height:73px}}

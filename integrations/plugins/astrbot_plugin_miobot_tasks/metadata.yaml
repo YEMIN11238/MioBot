@@ -1,0 +1,13 @@
+name: astrbot_plugin_miobot_tasks
+display_name: MioBot 私人助手定时任务
+desc: 按用户授权创建、列出和取消一次性提醒；复用MioBot任务调度，不启动重复定时器。
+version: v0.1.1
+author: MioBot
+license: AGPL-3.0-only
+astrbot_version: ">=4.29.3,<5"
+support_platforms:
+  - webchat
+  - aiocqhttp
+  - qq_official
+  - telegram
+  - discord

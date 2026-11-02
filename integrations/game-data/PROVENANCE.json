@@ -1,0 +1,32 @@
+{
+  "edition": "Java Edition",
+  "version": "1.21.8",
+  "generatedAt": "2026-11-02T10:35:13.277Z",
+  "dataSha256": "c589fc97b16b58e7a2a58915392690d89a81ddb0d88796878923ce326e4eb8d1",
+  "itemCount": 1416,
+  "blockCount": 1105,
+  "recipeItemCount": 829,
+  "recipeVariantCount": 1607,
+  "packages": [
+    {
+      "name": "minecraft-data",
+      "version": "3.119.0",
+      "license": "MIT",
+      "author": "Romain Beaumont <romain.rom1@gmail.com>",
+      "repository": "git@github.com:PrismarineJS/node-minecraft-data.git",
+      "integrity": "sha512-RElo0o2RooEzpeQO+QEHzTmHVTgOdbbomGQYBmWIaU1pupEmAItQb+LpJyL2EDXmpKicOU4swtBVzwIWae5l5g==",
+      "packageMetadataSha256": "a0824fdcce7ecc455417b766ff6852ea7f823f7bc61d295d971b96743ed41da9"
+    },
+    {
+      "name": "prismarine-recipe",
+      "version": "1.5.0",
+      "license": "MIT",
+      "author": "Romain Beaumont <romain.rom1@gmail.com>",
+      "repository": "git+ssh://git@github.com/PrismarineJS/prismarine-recipe.git",
+      "integrity": "sha512-GRZHbsyBIUgVNF10vFRv2YWZj86vokCT5EWX6iK6gfx6h4FapgZT29V2DNkjv5+hmdzBCLZvfx1/RYr8VPeoGQ==",
+      "packageMetadataSha256": "ec63d25d8462547631bf047e7c1c7e1e25324cb04ae065e43fb461a1a3c72126"
+    }
+  ],
+  "transformation": "Item/block fields selected; Recipe.find computes shaped/shapeless ingredients and requiresTable. Complete variants retained. The application returns only bounded alternatives.",
+  "scope": "Offline version-pinned game facts. No running game, account, inventory, server or world is accessed."
+}

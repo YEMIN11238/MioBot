@@ -1,0 +1,1371 @@
+# v4.1.9（2026-10-22 · 语义一致性审查修复）
+
+- **档位（H1）**：`_time_flag` / `_emo_flag` 在 custom（默认档）下回读已保存的细分开关——
+  此前直接用调用点默认值，导致 8 个布尔细分键（`rhythm_enable` / `continuity_inject` /
+  `include_calendar` / `include_first_seen` / `include_last_chat` /
+  `emotion_heat_drift_enable` / `emotion_reunion_inject` / `emotion_cold_war`）的用户设置全部失效。
+- **检索索引（H2）**：`create_kb=false` 时 `/style_index` 仍可手动重建索引（该开关只约束自动同步）；
+  失败提示补齐真实原因，不再把「关闭自动建库」归因成「语料为空 / 未配置 embedding」。
+- **QC 口径（M1/M2）**：配置提示与事件流文案统一为「仅记录、不改写、不额外调用模型」；
+  `humanize.enabled` 提示明确 QC 检测独立运行（与实现一致）。
+- **注入开关（M3/M5）**：`style.enabled` 与 `enable_gap` 提示改为与实现一致（只关闭对应注入，
+  其余由各自开关控制；生活状态由 `enable_life` 独立控制）。
+- **风格空值（M4）**：`active_style` 提示明确「留空自动使用第一个可用档案并写回」，不再承诺「空 = 不注入」。
+- **配置保存（M8）**：控制台保存失败时回滚内存修改，不再出现「提示失败但本进程内已生效」。
+- **控制台失败态（M6）**：配置/状态接口返回 `degraded` 标记；总览/配置/统计/主动/记录页显示错误条，
+  不再把后端故障渲染成「关闭 / 空 / 0 / 无记录」。
+- **主动状态页（M7）**：补齐会话白名单、连续未回复上限、自适应间隔字段，并按会话给出暂停原因。
+- **主动消息历史（L2）**：回看只认插件写入的完整合成句，用户自发 `[主动消息]` 前缀文本不再误标。
+- **主动消息去痕（L4）**：Agent Pipeline 与轻量回退两条路径统一走同一入口，受 `humanize.enabled`
+  与 `min_length` 约束（此前 pipeline 不去痕、轻量路径无条件去痕且忽略两个配置）。
+- **统计（L1）**：文档「10 项」更正为 9 项；`qc_hits` 说明为「命中至少一条规则的消息数」。
+- **总览（L3）**：情绪卡更名为「最近情绪」并显示时间，不再把存储态当作实时「当前情绪」。
+
+# v4.1.8（2026-10-21 · 总览首卡文案纠偏）
+
+- **误导修复**：总览第一张状态卡原标签「插件总开关」，实际读取的是 `humanize.enabled`
+  （润色去痕开关，schema 明确写明「不控制时间/情绪/风格/主动」，且 v4.1.0 起已不是插件总开关）。
+  用户可能误以为关掉它就禁用整个插件，因此改名为「润色去痕」，并加副文案
+  「本地规则清理；不影响风格注入 / 感知 / 主动聊天」。
+- **深链**：该卡点击跳转由 `/config` 改为 `/config?group=humanize`，配置页支持 `?group=` 参数
+  直接打开对应分组（此前会落在第一个分组）。
+- 其余状态卡（主动聊天/生活状态/风格注入）标签与配置分组一致，保持不动。
+
+# v4.1.7（2026-10-21 · 预发布检查修复）
+
+- **UI 修复**：状态卡补 `box-sizing: border-box`——此前卡片实际高度比网格行高多 46px，
+  总览两行卡片会重叠约 30px（深色底上不易察觉）；修复后卡片与行高一致、行间距均匀。
+- **统计页**：9 张卡从 4 列（末行只剩 1 张孤卡）改为 **3×3 均衡网格**；底部说明条增加间距。
+- **包内容清理**：随包分发的 `webui/README.md` 去掉本机绝对路径与过期产物名（顺带更新
+  图标数量与版本说明）；`package_plugin.py` 文档中的本机路径改为通用示例。
+- 验证：全量 1293 passed / 3 skipped；Playwright 7 页 0 JS 错误；rebuilt 产物
+  `index-B9yGshej.js` / `index-BV_fj3NS.css`；打包 77 文件。
+
+# v4.1.6（2026-10-21 · 修复插件目录内的框架配置副本泄漏）
+
+- **问题**：AstrBot 的 `get_astrbot_root()` 未设置 `ASTRBOT_ROOT` 时取「当前工作目录」；
+  从插件根目录运行 pytest / 导入框架，会把 `data/cmd_config.json`（含 dashboard 口令
+  哈希）与 `data/t2i_templates/` 生成到插件目录，存在随目录分享/打包外泄的风险
+  （打包脚本本身已排除 `data/`，但直接复制目录仍会带走）。
+- **修复**：新增 `tests/conftest.py`，在导入 astrbot 前从 `PYTHONPATH` 探测并设置
+  `ASTRBOT_ROOT`，测试不再在插件目录生成 `data/`；新增
+  `tests/test_plugin_local_data_guard.py` 守卫（插件目录出现 `data/cmd_config.json` 即失败，
+  并校验 `.gitignore` 与打包排除均含 `data/`）。
+- **文案**：启动告警补充处理指引——删除/移走该 `data/` 目录；开发测试时设置
+  `ASTRBOT_ROOT=<AstrBot 根目录>`。
+- 已清理本机工作副本与 live 插件目录内的泄漏副本（移入隔离目录，未删除）。
+
+# v4.1.5（2026-10-21 · 配置页排版重做）
+
+- **设置卡网格**：配置页从「顶部标签 + 表单行」改为**两列设置卡**——每一项是自包含卡片
+  （标签 + 说明问号 + 键名水印 + 控件），控件类型不同（开关/数字/下拉/文本）也保持整齐对齐；
+  长文本项（textarea）独占整行，窄屏自动降为单列。
+- **分组信息**：每个分组标题行显示说明与「N 项」徽标，档位键仍置顶。
+- **保存条**：吸底操作条改为「有 N 项未保存修改 / 配置已是最新」+ 放弃修改 / 保存配置，
+  保存按钮在无改动时禁用。
+- 控制台其余页面与后端接口不变（7 页、130 键、19 路由）。
+
+# v4.1.4（2026-10-21 · 控制台 UI 优化）
+
+- **导航**：顶部菜单加页面图标（总览/配置/语料与风格/主动聊天/记录回看/真人感规则/统计），
+  选中态图标转品牌粉。
+- **配置页**：单列长表单改为**两列响应式网格**（顶部标签，textarea 独占整行），页面高度约减半；
+  新增「有未保存修改」提示（与载入快照比较）。
+- **真人感规则页**：规则卡片改**两列网格**；新增 全部 / 注入型 / 质检型 / 已停用 筛选，
+  与搜索框叠加生效。
+- **总览**：状态卡可点击直达对应页面（配置/主动聊天/语料/记录回看），hover 显示跳转箭头。
+- **细节**：暗色细滚动条与文本选中色；图标集随新增箭头图标重新生成。
+
+# v4.1.3（2026-10-21 · 档位可见性 + 控制台细节）
+
+- **状态出口补档位**：`web_status()` 新增 `awareness_mode` / `emotion_mode` /
+  `proactive_preset` 三个只读字段（默认 `custom`），控制台与二次开发可直接读取当前档位。
+- **总览档位 chips**：总览首屏新增三枚 chip，显示「时间 / 情绪 / 主动」当前档位
+  （`custom` 显示为「按细分开关」，simple/standard/full/reserved/clingy 显示中文语义）。
+- **配置页档位置顶**：三组档位键固定排在所属分组最前，不用滚到组尾找。
+- **冒烟脚本增强**：`tools/verify_console.py` 新增断言——总览档位 chip、三组配置页档位项；
+  7 页仍 0 错误。
+- **测试**：新增 `tests/test_fix_v413_status.py`（状态出口/总览/配置页置顶接线）。
+
+# v4.1.2（2026-10-21 · 对外文案梳理 + 控制台体验优化）
+
+> 无发版计划外的行为改动；本版聚焦「对外可见文案一致性」与控制台可用性。
+
+## 对外文案纪律
+
+- 按最新对外文案要求梳理用户可见文件（metadata help、README、安装说明、CHANGELOG、
+  `_conf_schema.json` 描述/提示、控制台页面）：不再出现其它插件/项目名称与推荐替换其它方案
+  的表述，历史条目统一改为中性描述；内部代码注释与测试保留出处。
+- 新增 `tests/test_public_copy.py`：扫描用户可见文件中的外部插件名与替代表述，
+  并校验配置面板分组文案与当前 6 组一致。
+- 修正配置面板残留：`proactive` 分组描述/提示不再宣传已移除的承诺簿；历法感知提示
+  改为中性表述；README 主题描述与当前 Moonshot 式暗色主题一致（原写作「星穹甜心」为
+  旧主题遗留）。
+
+## 控制台体验
+
+- **枚举配置渲染下拉**：schema 自带 `options` 的键（时间/情绪/主动三组档位）在配置页
+  渲染为下拉框，并给 custom/simple/standard/full/reserved/clingy 附中文语义标签。
+- **离线图标**：新增 `webui/scripts/gen-icons.mjs` 生成本地 lucide 图标集
+  （`src/icons.generated.ts`，27 个），控制台不再请求 Iconify 在线 API——内网/离线
+  环境图标不再空白，也消除了控制台的外部网络错误。
+- **控制台运行时冒烟工具**：新增 `tools/verify_console.py`（Playwright + 本机 Edge，
+  mock 桥接数据），逐页打开 7 个页面、收集 JS 错误并截图；当前 0 错误通过。
+
+## 其他
+
+- `package_plugin.py` 排除 `_verify/`（控制台截图目录在工作区级，不进产物）。
+- 重建控制台产物并同步线上；配置 6 组 130 键、命令 14 条不变。
+
+# v4.1.1（2026-10-20 · 承诺簿移除 + P1 优化 + Phase 8 收口 + 打包卫生）
+
+> 承接 v4.1.0 功能裁剪：本版移除承诺簿（记忆职责归一），并落地 P1 优化项、
+> Phase 8 收口与发布/打包基础设施。
+
+## 承诺簿移除
+
+- 删除 `humanizer_core/commitments.py`、配置键 8 个（`commitments_enable` /
+  `commitments_track_groups` / `llm_confirm` / `inject_in_chat` / `remind_grace_days` /
+  `commitments_extract_model` / `commitments_extract_timeout` / `commitments_debug`）、
+  命令 `/commitment_list|done|drop`、`commitments.json` 读写与相关测试；
+  `<time_context>` 的承诺到期行、stats `commitment_captured` 一并移除。
+- 记忆/承诺职责统一交给记忆类插件（记忆类方案 等）；旧配置值忽略即可。
+
+## P1 优化（评审清单 ⑤–⑫）
+
+- **lang_mirror 短语质量**：新增 `prune_phrases()`——按「频次×长度」保留并剔除互相包含的
+  n-gram 碎片（「比基/基尼/尼比基尼」这类「比基尼」滑窗碎片不再被注入为高频短语）；
+  采集与渲染两处都过同一条去重叠规则。
+- **QC 观测**：新增 stats `qc_checked`；QC 检查与润色开关解耦（关掉去痕也统计命中）。
+- **输入状态平台闸门**：`aiocqhttp` / `qq_official` / `qq_official_webhook` 实测不传播
+  input_status，直接跳过输入状态处理（不再空转）。
+- **主动消息发送兜底**：pipeline 发送未确认时改走直发通道重发一次，成功照常记历史与
+  `proactive_sent`，仍失败才告警放弃。
+- **观测补全**：stats 新增 `typing_delay_applied` / `debounce_merged`（共 10 项）。
+- **配置档位（合并同质开关）**：新增 `time/awareness_mode`（custom/simple/standard/full）、
+  `emotion/emotion_mode`（同四档）、`proactive/proactive_preset`（custom/reserved/standard/clingy）。
+  默认 `custom` 完全保持原细分开关行为，档位只在读取时覆盖、不改写用户配置；
+  实现在 `humanizer_core/presets.py`（纯函数）。
+
+## Phase 8 收口
+
+- 按项目 2026-09-12 的 Phase 8 结论（main 已无「纯逻辑大块」，剩余体量是框架适配编排）
+  完成收尾：全仓死方法扫描 0 项；配置读取统一经 `TypedConfig`（`_group/_group_num`
+  委托门面）；本批移除改写/复读/承诺簿后 `main.py` 6192 → 约 5300 行，保留
+  hook 注册 + 装配 + 框架适配编排；REFACTOR_PROGRESS.md 追加 Phase 8 收口记录。
+
+## 发布与打包基础设施
+
+- 新增 `package_plugin.py`：标准库 zipfile 打包市场 zip（顶层目录固定、`--dry-run` 预览、
+  `--force` 覆盖、SHA256 输出），排除 `.git/`、`__pycache__/`、`tests/`、`tools/`、内部
+  `REFACTOR_PROGRESS.md`、`SEED_MANIFEST.json`、`pages/humanizer-console.bak*` 等。
+- 恢复 `.gitignore`（工作副本原先被删）并补充 bak/node_modules/dist 规则。
+- 前端源码补齐为**可构建工程**：`webui/` 增加 `package.json` / `package-lock.json` /
+  `vite.config.ts` / `tsconfig.json` / `index.html` / `src/env.d.ts`，按 v4.0.x 产物反推
+  补齐 `src/composables/useBridge.ts`（AstrBotPluginPage 桥 + /api/plug 回落），新增
+  `RulesView.vue` 第 7 页，更新 Config 分组标签、Stats 计数与 Overview 仪表盘；
+  并用源码重建 `pages/humanizer-console`（产物 `index-D0H0Vkx4.js` / `index-BMXvfWun.css`）。
+  新增 `tests/test_console_build_contract.py` 钉死 index→assets 引用、7 页标题与桥接协议。
+- 清理包内杂物：`pages/humanizer-console.bak-*`（1.78 MB）移出插件目录（未删除）。
+
+## 测试基线
+
+- 全量 pytest：**1281 passed / 3 skipped / 35 subtests**（exit 0）；全部 py `py_compile` 通过；
+  `main/web_api/humanizer_core/style_core` import 冒烟通过。
+- 新增 `tests/test_fix_v411_p1.py`（档位纯函数、短语去重叠、P1 接线 12 例）；
+  删除随承诺簿下线的 `test_commitments*`，同步调整 split/facade/provider-wiring 等契约测试。
+
+# v4.1.0（2026-10-20 · 功能裁剪 + 发送链修复）
+
+> 依据作者对功能清单的取舍：移除「没什么用」的 LLM 深度改写族与应声虫复读，保留插件分段发送
+> （框架 segmented_reply 不满足需求，作为补充能力保留）；其余功能不动。测试基线见下方验收数字。
+
+## 功能移除
+
+- **LLM 深度改写**：删除 `humanize.enable_llm_rewrite` / `rewrite_model` / `rewrite_timeout` /
+  `rewrite_total_timeout` / `rewrite_max_candidates` / `llm_rewrite_concurrency` 六键，
+  以及 `_llm_rewrite` / `_rewrite_once` / `_rewrite_timeout_seconds` / `_style_rewrite_suffix` /
+  `_rewrite_state_line` 与 `humanizer_core/prompt.py`、`humanizer_core/llm_budget.py`；
+  `humanize.enabled` 保留为「润色去痕开关」，回复只走本地规则清理。
+- **模型故障切换**：删除 `humanizer_core/llm_target.iter_failover_models`；`resolve_rewrite_target`
+  保留（主动消息生成仍需要「跟随当前会话模型」的解析）。
+- **改写模型命令**：删除 `/humanizer_models`、`/humanizer_model`（命令 19 → 17）；
+  删除 Web 端点 `models/set-rewrite`（路由 20 → 19）及 `web_read_model` /
+  `web_set_rewrite_model` / `web_rewrite_model` 三个 facade（控制台状态页改走新增 `web_status()`）。
+- **思考内容移除**：删除 `humanize.remove_reasoning`（与宿主 `provider_settings.display_reasoning_text`
+  重复且不省 token）；cron 主动消息的思考清除保留。
+- **应声虫复读**：删除整个 `parrot` 配置分组（14 键）、`humanizer_core/parrot.py`、`parrot_state.json`
+  读写、`_parrot_*` 钩子与相关测试。
+- 连带：`humanize.max_chars`（仅改写用）删除；stats 移除 llm_rewrite/rewrite_switched/
+  rewrite_exhausted/rewrite_rejected/qc_fixed 五个计数（12 → 7）；QC 质检型规则降级为
+  「只检测计数 + 日志，不改写」。
+
+## 发送链修复（此前 humanize 总闸会连坐）
+
+- `humanize_response` 的「本轮为 LLM 人格聊天产出」标记（`_humanizer_llm_replied`）改到
+  `humanize.enabled` 判断**之前**写入；此前关闭「润色去痕」会让 `_is_llm_reply()` 恒 False，
+  普通回复的拟人打字延迟与分段连发静默失效（仅 cron 主动消息仍分段）。
+- `/commitment_list`、`/commitment_done`、`/commitment_drop` 补
+  `@filter.permission_type(ADMIN)`（其余 16 条管理命令早已有）。
+- 墙钟行自动跟随宿主：`_framework_injects_datetime()` 读取
+  `provider_settings.datetime_system_prompt`，宿主已注入 `Current datetime` 时跳过插件墙钟行，
+  避免同一请求两份时间。
+
+## 配置与测试
+
+- `_conf_schema.json`：7 组 157 键 → **6 组 135 键**（humanize 12→4、parrot 组删除）。
+- 测试：基线 1456 passed / 3 skipped → 本版 **1317 passed / 3 skipped / 35 subtests**（删除
+  随功能下线的用例，绿）+ `py_compile` 全绿；另修复 3 个测试文件硬编码的本机临时目录
+  导致的跨机器失败（改用系统临时目录）。
+
+# v4.0.6（2026-09-29 · 修复批：改写模型解析 + v4.0.4 回归恢复 + 契约对账）
+
+> 触发原因：①运行时告警「提供商 'xiaomi-token-plan' 不支持模型 'mimo-v2.6-flash'」
+> ——框架 Xiaomi Token Plan 适配器的 get_models() 硬编码名单未跟上新模型，插件侧
+> 误判回落；②全量审查发现 v4.0.4 重构时误删两处 v4.0.3 钉子（凭据副本护栏、
+> 旧库残留提示）+ 一处幻觉引用；③7 个契约测试未随 v4.0.4 的路由恢复/服务化对账。
+
+## 深度改写模型解析：信任 provider 实例自声明（修复 mimo-v2.6-flash 回落）
+
+- `humanizer_core/llm_target.py` 新增 `_provider_declares_model()`：当配置为
+  完整复合实例 id（`provider/模型`）且实例自身（`get_model()` 或
+  `provider_config["model"]`）声明的模型与目标严格一致时直接放行，不再依赖
+  适配器可能过期的 `get_models()` 枚举名单；
+- 声明不一致/读取失败仍走原列表校验与回落，前缀匹配、裸模型名路径零改动；
+- 框架侧已核验无二次闸门（`llm_generate` kwargs 透传，anthropic 线
+  `model or get_model()` 直进请求），语义与 `_call_llm_for_profile` 形态 2 一致；
+- 已知残留（有意不收口，上游名单更新后自愈）：schema 动态下拉与
+  `/humanizer_models` 列表仍由 `get_models()` 驱动，新模型手填可用但列表选不到。
+
+## v4.0.4 回归恢复（全量审查定性：3 处真回归）
+
+- 恢复 `_warn_stray_runtime_config()` 启动护栏（v4.0.3 引入、v4.0.4 重构误删）：
+  插件目录残留 `data/cmd_config.json`（含 dashboard 口令哈希）时启动告警；
+- 补回 kb_service 新建知识库时的旧库残留提示
+  （「旧的 human_style_* 知识库不会自动清理」，v4.0.4 重写 sync_job 时丢失）；
+- 订正 `humanizer_core/commitments.py` docstring 的幻觉引用
+  （`main._life_commitment_check` 从未实现，改为描述实际的窗口制注入+手动核销）。
+
+## 性能修复补充（2026-10-13 · 本地未发布）
+
+- 移除 `main.py` 装配 `KBPorts` 时与默认算法等价的自定义指纹回调，
+  恢复 KBService 基于文件修改时间/大小的语料签名缓存；稳定语料不再每轮
+  读取、合并和哈希，检索缓存键也能取得非空的语料签名。
+- 保留 embedding provider 与索引结构版本对最终指纹的影响；语料文件提示
+  改变或显式失效后重新计算，真正自定义指纹算法的服务接口不变。
+- 深度改写先尝试首选模型，仅在传输失败且预算仍允许重试时枚举备用模型；
+  首选成功、内容校验失败、仅允许一次尝试或预算耗尽时不做备用列表探测。
+  保留故障切换排序、候选去重、内容拒绝回落、并发限制和取消清理；
+  备用模型枚举也受剩余总预算约束，超时取消枚举并释放改写并发槽。
+- 新增默认指纹缓存行为/装配契约测试与改写异步编排测试，覆盖缓存失效、
+  备用列表异常、候选顺序、预算边界及信号量/递归标志释放。
+- 主动聊天维护循环、现有兼容入口和发布资产均未修改；本批不提升版本号。
+
+## 契约测试对账（7 项，随 v4.0.4 设计现状更新断言）
+
+- 路由表 17→20：styles/build 与 models 两族为 v4.0.4 有意恢复的兼容入口；
+- 唯一僵尸端点收敛为 styles/import-colleague（已并入 styles/generate
+  source=colleague）；
+- KBService 私有名断言反转：v4.0.4 服务化后别名即实现本体，改为锚定
+  「同引用绑定 + 状态容器只在 __init__ 绑定」；
+- web facade 断言随 models 端点恢复更新（web_set_rewrite_model 合法回归）。
+
+# v4.0.5（2026-09-21 · 市场审核修复：日志记录器统一）
+
+> 触发原因：插件市场审核驳回——humanizer_core 下 5 个模块使用 Python 内置
+> `logging.getLogger` 而非 astrbot.api 的 logger，违反「日志记录器必须且只能
+> `from astrbot.api import logger`」的规范。本版无任何行为变更，仅统一日志记录器；
+> 测试基线 1437 passed / 35 subtests（与修复前完全一致，零回归）。
+
+## 日志记录器统一（审核违规项全清）
+
+- `humanizer_core/typing.py`、`state.py`、`state_store.py`、`debounce.py`、
+  `llm_target.py` 全部由 `import logging` + `logging.getLogger(...)` 改为
+  `from astrbot.api import logger`（astrbot.api 的 logger 为按调用模块路由的
+  代理，底层仍是标准 Logger，`.warning/.exception` 等方法全部可用）；
+- `llm_target.py` 原先 `logging.getLogger("astrbot")` 借名取全局日志记录器，
+  同样违规，已改为官方导入，4 处调用点 `_logger.` → `logger.`；
+- 全仓 `import logging` / `logging.` 引用清零（grep 复核通过）；
+- 相应更正 5 个模块 docstring 中「零 astrbot 依赖」的过时表述——日志依赖
+  astrbot.api（市场规范所迫），其余逻辑仍为纯函数；受此影响这 5 个模块的
+  单测需在 astrbot 可导入的环境（宿主 venv）下运行，测试基线不受影响。
+
+# v4.0.4（2026-09-21 · 发布前审查修复批：语料对齐 + 控制台补齐 + 发布适配）
+
+> 触发原因：外审发现分发物 `corpora/base.jsonl` 与它自己的构建脚本
+> `tools/build_base_corpus.py` 长期不一致，且控制台有一处承诺过的下拉实际不存在。
+> 本版不引入新功能，全部为一致性与健壮性修复；测试基线 1369 passed / 60 skipped / 35 subtests。
+>
+> **版本号说明**：上一份构建（v4.0.2 + 31 行小修）已于 2026-09-19 以 **4.0.3** 部署/发布，
+> 但归档目录的 metadata 未同步、仍写着 4.0.2。本次内容与之不同源，故推进到 **4.0.4**
+> 以免版本撞车与市场判重缓存（同 v2.9.6 的做法）。
+
+## 内置语料池：已评估，按决定不过滤
+
+发布前审查发现 `corpora/base.jsonl` 与它自己的构建脚本
+`tools/build_base_corpus.py` 长期不一致（分发文件有 22.3% 的行超过脚本
+`is_noise` 的 60 字上限）。逐版比对定位到根因：
+
+| 版本 | 问答对 | 中位长度 | 超 60 字占比 |
+|------|--------|----------|--------------|
+| v2.1.2 / v3.0.0 | 3000 | 10 字 | 0% |
+| v3.10.0 / v4.0.0 | 6000 | 41 字 | 31.9% |
+| v4.0.2 / 现行 | 10379 | 30 字 | 22.3% |
+
+**v3.10.0 换了语料来源/切分方式**（分词短句 → 保留多轮原句），但构建脚本的
+`is_noise` 长度窗（4~60）与 `--total` 默认值（3000）没跟着改。即：文件并不是脏，
+是脚本描述的现实过期了；超长的多轮原句是有意保留的检索上下文。
+
+曾按「长度窗 60→100 + 重滤语料」实现并通过测试（10379 → 9853 对），
+**经确认后决定不回退该过滤、维持 20758 行原始语料**，相关改动已全部撤销：
+`corpora/base.jsonl` 与 `tools/build_base_corpus.py` 均恢复 v4.0.2 原样，
+防漂移测试一并移除。诊断结论保留在此，供将来重新决策时参考——若哪天想收紧，
+长度窗取 100 是有数据依据的（81-100 字有 1944 行，101 字以上仅 154 行）。
+
+## 控制台
+
+- **「时间线生成模型」下拉修复**：`_collect_dynamic_options` 原产出
+  `life/extract_model`——v3.9.0 分组重构后 `life` 组已并入 `time`（键名改为
+  `life_extract_model`），该键成了死键，前端按 `time/life_extract_model` 查表
+  永远查不到，控制台把此字段渲染成纯文本框，而安装说明承诺它是下拉。
+  改为产出 5 个现行键：`humanize/rewrite_model`、`style/extract_model`、
+  `time/life_extract_model`、`proactive/commitments_extract_model`、
+  `parrot/judge_model`。
+- **数组型配置可编辑**：控制台配置页原按 `typeof 值` 推断控件类型，
+  `typeof []` 落 `skip`，导致 `typing/command_prefixes`（指令前缀列表）在控制台
+  既看不到也改不了。改为优先读 schema 声明的 `type`：`list` → "每行一条"文本框
+  （读时 `join('
+')`、写时 `split + trim + 去空`，落盘仍是 `string[]`）。
+  `file` 类型维持不渲染（语料上传走「语料与风格」页），已在安装说明注明。
+  源码改动 `webui/src/views/ConfigView.vue` + `webui/src/components/StatCard.vue`，
+  已重构建（工具链确定性复现验证通过：无改动重建 hash 与原包一致）。
+- **硬编码端口移除**：`StatCard.vue` 跳转原写死 `http://127.0.0.1:6185/`，改端口 /
+  走反代 / 用局域网 IP 访问面板时必然失效；改为 `${window.location.origin}/`。
+- **冗余端点下线**：`POST /styles/import-colleague` 撤除——它与 `styles/generate`
+  的 `source=colleague` 分支**逐行重复**，v2.9.4 的 await/解包三重修复被迫改两遍。
+  新增契约测试钉死"全模块仅一处 `_load_colleague_input` 调用"。
+  `styles/build` 与 `models/set-rewrite` 保留为兼容入口（前端零调用），
+  ROUTE_SPECS 已注明，勿再复制实现。路由 20 → 19。
+
+## 配置文案（_conf_schema.json）
+
+- `typing.delay_max` / `typing.total_delay_cap` 原**描述完全相同**
+  （"目标总延迟上限（秒）"）但语义不同，用户必混淆；改为
+  「目标总延迟上限（软，秒）」/「目标总延迟硬上限（秒）」，hint 中明确
+  "软上限决定想等多久、硬上限决定最多等多久"。
+- `style.retrieval_timeout` hint 去除自我重复的两段解释与内部日期备注。
+- `typing.dedupe_rewrite` hint 去除"（2026-09-06 实证）"内部备注。
+- `emotion.emotion_soothe_boost` hint 去除"v4.1.0 起"引用（该版本未发布）。
+- `parrot.prob_normal`：原标注"（预留）"易误判为死键，实际是可用功能
+  （非搞怪消息的复读概率，默认 0 = 只学舌搞怪消息）——改文案说明清楚，**不删键**。
+- `typing.command_prefixes` hint 补控制台编辑格式与"留空 = 关闭指令识别"的后果。
+- `time.schedule` hint 补富语法（`HH:MM-HH:MM 安排 | 心情:… | 地点:…` 与自然时段名），
+  此前只有 README 提到、配置面板发现不了。
+
+## 文档同步
+
+- README：控制台"6 个页面"→**7 个**（补「真人感规则」页）；配置页"五组"→七组；
+  语义分区"六个"→**七个**（补「复读 · 应声虫学舌」行）；总览页补仪表盘字段；
+  安装目录树由 v1.x 时代 4 模块更新为现行全量结构；「许可」节补
+  `corpora/base.jsonl` 四个来源（LCCC / 豆瓣多轮 / dgk 影视字幕 / chatterbot-corpus）
+  及许可证与过滤规则；新增「内置语料池」说明段（含防漂移测试提示）。
+- 安装说明：分区数 6→7、组名对齐 schema（"时间流动与生活"→"感知 · 时间与节奏" 等）、
+  补 parrot 组；下拉清单改为实际支持的 9 项并注明两个控件仅在原生配置表单可编辑。
+- metadata.yaml help：补「情绪×对话热度耦合」与「应声虫复读」（此前完全缺席），
+  版本号 4.0.2 → 4.0.3。
+
+## 代码卫生
+
+- 清理 9 个未使用 import：`main.py`(random / compute_next_delay)、
+  `humanizer_core/commitments.py`(extract_json_object)、`kb_state.py`(Optional)、
+  `parrot.py`(Any)、`retrieval_plan.py`(Optional)、`task_registry.py`(Optional)、
+  `services/proactive_state.py`(bump_sulky)、`web_api.py`(read_pool)。
+  `web_api.py` 的 `Context` 为 TYPE_CHECKING 类型标注，加 `# noqa: F401`。
+
+## 发布适配（对照 AstrBot 插件市场标准核对）
+
+对照本机 AstrBot 4.28.0 源码 `astrbot/core/star/updater.py::validate_plugin_metadata`
+与官方《AstrBot 插件市场 JSON 规范 2026-06-27》逐条核对，硬性门槛全过：
+metadata 4 个必填字段齐备且非空 / ZIP 1.73MB（上限 16MB）/ zip 顶层目录名 ==
+`metadata.name` / `plugin_id` = `SIiOC/astrbot_plugin_wanna_be_human` 合法 /
+`repo` 为合规 HTTPS GitHub URL / 包内无 `.git`、`__pycache__`、`node_modules`、
+`.pytest_cache`、`tests`。另做两项适配：
+
+- **`astrbot_version` 补上界**：`">=4.5.7"` → `">=4.5.7,<5"`。原先只有下界，
+  AstrBot 5.x 发布后会静默装上一个未必兼容的版本。已用 `packaging.SpecifierSet`
+  验证：4.5.7 / 4.24.2 / 4.28.0 / 4.99.99 通过，5.0.0 与 3.9.0 拒绝。
+  官方文档范例即为 `>=4.16,<5`。
+- **补声明 `support_platforms`**：列出全部 20 个合法适配器 key（取值对照
+  `astrbot/core/star/filter/platform_adapter_type.py::ADAPTER_NAME_2_TYPE`；
+  官方文档漏列 `webchat`，以代码为准）。本插件经 LLM 钩子与通用消息事件工作，
+  不调用特定平台私有 API，故支持面覆盖全部适配器；平台相关能力（如「对方正在输入」
+  感知）在所选平台不支持时自动静默降级，不影响主功能。
+  该字段经核实为**纯信息字段**——只加载进 `StarMetadata` 并在 WebUI 展示，
+  无任何安装/加载门槛，声明不会限制安装。
+  （注：v1.1.1 曾移除 `support_platforms: all`，当时删得对——`all` 不是合法 key；
+  本次是按现行规范补合法 key 列表，不是把 `all` 加回来。）
+
+## 兼容性
+
+- 配置键零增删、零默认值变更（157 键 / 7 组不变）；迁移逻辑未动。
+- `corpora/base.jsonl` 由 10379 对降至 9853 对（-5.07%），检索覆盖面基本不变。
+- 控制台资源文件名变更（Vite content hash），`pages/humanizer-console/index.html` 已同步。
+- 撤除 1 个前端零调用的冗余端点；AstrBot 原生配置表单行为不变。
+
+# v4.0.2（2026-09-17 · 文档订正 + 回归钉子）
+
+- `_read_capped` 描述订正（CHANGELOG v4.0.1 条目 + main.py docstring）：旧实现按字符 `limit//4` 读，中文场景实际只用约 3/4 字节预算——是**少读**、从未超限；初版描述"可超上限约 1/4"因果说反。
+- `migrate_group_merges` 补 4 条「改名键不双写」回归测试（extract_model→commitments_extract_model、life_extract_model 变体、保名键混合、未知键照旧兜底）——v4.0.1 的修复此前只有手工验证、无测试钉子。
+
+# v4.0.1（2026-09-17 · 外审修复批）
+
+> 外部模型两轮逐行审查（记忆类方案与本插件）后的集中修复。无行为改版，全部向后兼容；测试基线 1390 passed / 3 skipped（宿主 venv）。
+
+## 修复：主动消息生命周期（P1×2）
+
+- **死会话永不回收**：`prune_stale` 原用 `triggers`（下次触发时间）判 24h 过期——但触发时间恒被重排到未来，主动开启时判式永远为假，triggers/unanswered/last_user_ts/followups 四表无限增长。改用**用户最后发言时间**（last_user_ts）判过期，并取两表并集防孤儿条目；机器人自己的主动发送不算"活动"。
+- **连续未回复无硬上限**：常规主动此前只靠 `unanswered` 参与间隔放大（封顶 240 分钟）拉长节奏、从不停发。新增 **`proactive_max_unanswered`**（默认 6，0=关）：达到上限暂停该会话主动发送直至用户发言（note_user_message 清零即自动恢复）；暂停期间照常重排，调度状态完整、面板可见。
+
+## 修复：防抖与发送管线
+
+- **自愈守卫 TOCTOU**：结算事件置位与等待协程被唤醒之间有一个事件循环窗口，窗口内的新消息此前被误判为"无等待者的死会话"而整轮丢弃。会话登记 `waiter_task`（bind_waiter），守卫只在该任务确实已结束时才丢弃；等待者活着则走正常追加（由它合并结算）。
+- **输入保护被打断**：`absorb_activity` 此前无条件重置防抖计时器——用户"正在输入"挂起的等待被表情/语音打断、按 debounce_time 提前结算。is_typing 期间只登记 item 不动计时器。
+- **NameError 控制流**：`_pipeline_failed` 改为函数入口预绑定（同 v3.9.5 的 cron_event 手法）。
+- **terminate 落盘顺序**：先停 `_time_flush_task`/`_life_task` 再终局落盘（防维护循环用较早快照覆盖终局状态）。
+
+## 修复：缓存与承诺
+
+- **llm_target 空列表永久缓存**：provider `get_models()` 失败此前照样写入空列表缓存——provider 故障切换的可用性探测"模型不存在"永久命中直到重启。失败不再写缓存（坏 provider 期间每次探测多一次网络请求，是可接受的代价）。
+- **承诺 ID 碰撞**：原式 `毫秒时间戳+len(text)%97`，同批次共用同一 now_ts，两条同长度文本必同 ID（`mark_resolved` 误伤）。加 `uuid4().hex[:8]` 随机段。
+- **parse_llm_array 字符串盲区**：括号配平扫描无字符串状态机，正文含 `]`（如"喜欢[收藏]之类"）时提前截断、整批解析失败丢弃。补 in_str/esc 状态机。
+
+## 修复：时间与节奏边界
+
+- `gap_context` NaN 防御（NaN 比较全假会一路落到「隔了一周多」）。
+- `rhythm_heat` 负 gap（时钟回拨）不再判 hot，NaN 按 warm 兜底。
+- `parse_time_slot` 跨午夜（`23:00-01:00`）返回当日段+次日凌晨段两段（原截断为当日段，凌晨误判空闲）。
+- `settle_delay` NaN 显式兜底（行为不变，语义明确化——实测 NaN 落 max 比较恒假，原实现碰巧安全但脆）。
+
+## 修复：杂项
+
+- 检索缓存 `clear()` 引入代数版本号：in-flight 任务完成后不再把已失效数据回填缓存（不取消任务，等待者不受波及）。
+- `_read_capped` 按字节截断（v4.0.2 订正描述：原按字符 `limit//4`，中文 3B/字实际只用了约 3/4 字节预算——偏保守的**少读**、从未超限；现按字节截断用满上限）。
+- `_is_group_event` 回退路径改精确段匹配（`umo.split(":")[1]`）。
+- `_parrot_pending` 类型标注对齐实际四元组 `(模式, 任务, 原话, 时间戳)`。
+- kb_service `framework_loaded` 重复赋值去重。
+- config_migrate 兜底搬运排除已按显式规则搬移的源键（防改名键新旧名并存）。
+
+# v4.1.0（未发布 · 待与波 2 合流发布；热度耦合与应声虫复读实际已随 v4.0.0 部署上线，版本号归位待波 2 合流时一并处理）
+
+## 新增：情绪惯性 × 对话热度耦合
+
+- **问题**：此前情绪推进的正面来源只有安抚词池（16 个关键词命中才转 appy）、负面来源只有主动消息未回复计数——与节奏引擎算出的对话热度（hot/warm/cold）完全脱钩：热聊半小时情绪纹丝不动，话题慢慢冷掉也不会有"兴致淡了"的反应。
+- **热度成为第四输入源（漂移叠加式）**：`decay_and_soothe` 推进顺序升级为 时间半衰期衰减 → 逐条衰减 → **热度漂移** → 安抚命中。hot 每条向 appy 漂移、cold 每条向 sulky 漂移；与逐条衰减 ×0.6 平衡后的稳态分别约 **0.50（轻快档）**与 **0.25（淡淡档）**——**对话热度是情绪的主导来源**。
+- **权重再平衡（用户反馈"降关键词、升热聊"，同日二次调参）**：①安抚关键词从**一锤定音的固定 +0.4** 降格为**可配的加分项**（新键 `emotion_soothe_boost`，默认 0.2 ≈ 一条热聊消息的量级；**设 0 = 安抚词完全不参与**——不增量也不转方向，与 hot/cold 的"0=关方向"同契约；审查轮修复：初版把 0 误落回默认量，等于没有关词通道**且**清空词池还会回落内置池，两条"关"的路全堵死）——冷场节奏里零星"哈哈"不再能主导情绪，方向获胜保留：冷场中的好话仍直转 appy；②hot 漂移量 0.12→0.2（首条即注入，稳态 0.50）。cold 维持 0.10（两条起注入，负面建得比正面慢）；方向切换即时（单条消息翻转情绪方向）。
+- **方向切换语义**：hot 从 sulky 转向 appy（对方回得快，气性就该消）；cold 反之。初见守卫钉在纯层：`prev_seen` 无记录时 cold 一律按 warm 处理——首条消息的"冷档"是初见不是冷场，不摆脸色。
+- **热度同源**：heat 由节奏引擎 `rhythm_heat` 经 `_time_snapshot` 快照计算（`previous_seen ← _prev_seen`），与延迟融合/时间块注入同一读法——防"恒 hot"的既有同源契约自动覆盖新调用点。
+- **组合链地板语义修正（实测教训，两轮）**：逐条衰减与时间衰减先后改为无地板变体 `decay_raw()` / `decay_time_raw()`——若在衰减中间步判 NEUTRAL_FLOOR，亚地板残值会被清零、漂移增量整体被吞（情绪身份被打回 neutral、跨消息累加断链，稳态数学失效）。第一轮只修了逐条衰减；对抗审查（双代理）用「写回盖 ts」的真实协议仿真揪出时间衰减步同病（纯热聊从零起步被钉死在 0.12 永不注入），第二轮补齐。地板判断移交给渲染层（`emotion_directive` / `emotion_short` 自带过滤，亚地板状态存而不显）；`decay()` / `decay_time()` 单独调用的地板契约不变。另修两处无地板消费者泄漏：`reunion_directive` 与 `cold_war_proactive_directive` 的 appy 抑制分支补地板守卫（亚地板残值与 neutral 同权，不触发重逢指令/不抑制冷落弧线）。另修一处配置陷阱：漂移量设 0 = 关闭该方向（而非走 bump 的"非法值回落默认量"——否则想关反而变成最大漂移）。
+- **配置新增 4 键**（emotion 组，共 14 键）：`emotion_heat_drift_enable`（默认开）/ `emotion_hot_drift`（0.2）/ `emotion_cold_drift`（0.10，0=关闭该方向）/ `emotion_soothe_boost`（0.2）。与冷落降温弧线互补：弧线管**按天**的沉默（想念→抽离），热度漂移管**分钟级**的聊天节奏。
+- 测试：`test_emotion.py` 新增 TestHeatDrift 19 用例（稳态收敛/**首条注入灵敏度钉**/**关键词=一条热聊的权重钉**/力度可配/**boost=0 关闭钉**/非法回落/初见守卫/零漂移关闭/亚地板残值跨消息累积/方向翻转/安抚优先/**真实写回协议仿真**（盖 ts、变化才写——钉死"时间衰减地板回归"形态）/重逢与弧线地板守卫）；`test_emotion_wiring.py` 新增 4 契约（调用点五参数+heat 赋值溯源 rhythm_heat 赋值语句/纯层首见守卫/schema 默认值/**handler 定义序契约**——_track_time_activity 先于 _track_activity，防未来重构挪动定义顺序改变热度语义）+ 顺序契约升级三段（衰减→漂移→安抚）；`test_cold_war_wiring` / `test_timeflow_v370_wiring` 逐条衰减与时间衰减锚点迁移 `decay`/`decay_time`→`decay_raw`/`decay_time_raw`（顺序断言强度不变）。
+- 基线：宿主 venv 全套 **1393 passed / 35 subtests，exit 0**（对抗审查+两轮调参+权重审查修复后复跑；wip 归档独立复跑同绿）。
+
+## 新增：应声虫复读（学舌玩梗）
+
+- **搞怪消息触发**：用户发出不正经/搞怪消息（连续笑声 `哈哈哈哈`、纯标点玩梗 `？？？`、颜文字、玩梗口头禅 `笑死/绷不住/典中典`）时，以**默认 8% 概率原样复读**该条消息——还原网络「应声虫」玩梗行为，增加陪玩感。
+- **保守判定**：`is_playful` 走"宁可漏判不可误判"策略——含**真实疑问**（吗/怎么/几点…）或**正经诉求**（帮我/请问/求…）的一律不学舌；仅 1~24 字短促消息参与；单字梗（草/典/6）须独立成句（"草莓""典礼"不误伤）。
+- **只在私聊**：默认仅私聊参与（`allow_groups` 可放开群聊），与主动聊天同口径。
+- **防连发**：复读后 `cooldown_turns`（默认 8）轮内不再抽签；每会话 `max_per_day`（默认 4）次上限，跨日自动重置。
+- **纯原样**：命中后整条回复替换为用户原话并跳过全部改写链（100% 原样，不加字不改标点）；打字延迟按既有逻辑生效，短句自然落入快回窗口。
+- **实现要点**：抽签在 `on_llm_request` 最前（不打断任何注入，LLM 照常调用，管线完整——记忆/情绪/统计无感知）；接管在 `humanize_response` 的早退门之前（独立于 `humanize.enabled` 与 min_length）。状态落 `parrot_state.json`（per-umo 轮次/计数，原子写、启动剪枝）。
+- **默认关闭**（`parrot.enabled=false`），配置面板「复读 · 应声虫学舌」分组开启即生效。
+
+- **语义判定档（judge_mode=llm）**：新增可选的 LLM 判定——`parrot.judge_mode=llm` 时，结构门（长度/非疑问/非求助）通过后先抽签（prob），命中的轮次**并行**发起"搞怪程度 0~10"判定（不阻塞生成，响应阶段读分），分数 ≥ `judge_threshold`（默认 7）才复读。能识别关键词抓不到的反话/冷幽默/阴阳怪气/依赖前文的笑点。代价：命中的短消息一次模型调用（可单独配 `judge_model` 用便宜模型）；超时/解析失败一律视为不复读。默认仍是 `regex`（零成本零延迟）。
+- 配置新增 4 键：`judge_mode` / `judge_model` / `judge_timeout` / `judge_threshold`（parrot 组共 14 键）。
+- 判定调用量：结构门通过面约 41%（语料实测）× prob 8% ≈ 每条消息 3% 概率触发一次判定。
+
+## 修复：v4.28 下辅助 LLM 调用失效（`chat_provider_id` 必填）
+
+- **症状**：AstrBot v4.28 起框架 `Context.llm_generate` 把 `chat_provider_id` 改为**必填** keyword-only 参数；插件 `invoke_llm` 在未解析出提供商时会省略该键，导致 `TypeError: missing 1 required keyword-only argument: 'chat_provider_id'`。
+- **影响**：`judge_model` 配置为**裸模型名**（如 `deepseek-flash`）时，`parse_configured_target` 返回 `(None, model)` → 判定调用必然 TypeError 并被静默吞掉 → **`judge_mode=llm` 档应声虫复读从不触发**（运行日志实证「判定读取放弃: TypeError」）。承诺簿 LLM 复核（`commitments_extract_model` 裸名/空配置）为同类隐患，开启后会失效并回落正则。
+- **修复**：新增 `_resolve_aux_provider_id()`——辅助 LLM 站点在未解析到提供商时回退解析「当前会话 provider → 第一个已加载 provider」；`_parrot_judge` / `_confirm_commitment_async` 接入该回退，时间线/提炼两处内联解析同源收敛。`invoke_llm` 增加边界防御：目标签名要求必填而 `provider_id=None` 时抛 `ValueError`（附指路文案），把深层 `TypeError` 变为边界可诊断错误。
+- **安全方向**：解析不到任何 provider 时，复读安全放弃（不复读）、承诺回落正则（不漏账），绝不因解析失败中断调用链。
+
+## 测试
+
+- 新增 `tests/test_parrot.py`（含 structure_ok/parse_playful_score，共 66 用例）：搞怪判定正反例矩阵（含误判高危反例）、抽签概率边界与统计（10 万次抽样落在 8%±1%）、冷却/每日上限/跨日重置/剪枝、防抖合并取末段、main.py 接线 AST 契约（接管先于 enabled 门）、schema 默认值契约。
+- 新增 `tests/test_parrot_functional.py`（18 用例，宿主门控）：复读全链 + LLM 判定档（阈值门控/判定未完成安全放弃/结构门先于判定）。
+- 新增 `tests/test_llm_provider_wiring.py`：辅助 LLM 站点 provider 解析的 AST 接线守卫（禁止裸 `configured_provider` 直传 + 必含 `_resolve_aux_provider_id` 回退）。
+- 基线：宿主 venv 全套 **1353 passed / 35 subtests**，no-host 1303/50。
+
+# v4.0.0 (2026-09-12)
+
+**大版本**：架构重构（装配层 / services / core 分层）与第五轮高星调研融入·波 1 合入，并并入控制台「实时事件流 / 仪表盘 / 前端改版」。重构不改外部行为（配置语义、命令、注入点与线上基线逐字段一致），行为增强见下。
+
+## 新增：控制台实时事件流 + 总览仪表盘（并入 v3.9.6）
+
+- **实时事件流**：`_bump_stats` 同步推进内存环形缓冲（`_events_ring`，封顶 80 条、重启清空），12 类关键事件带标签入环（去痕/改写/主动/风格/质检/分段/承诺）；控制台实时展示最近 40 条。事件推送为纯增强——任何异常不影响统计主链路。
+- **总览仪表盘**：新增 `dashboard` 只读路由（经 `main.web_dashboard` 公开出口）：节奏档位+分数、非中性情绪会话列表、下次主动消息时刻、事件流。web_api 不再直读内部状态。
+- **前端改版**：控制台 bundle/CSS 更新（仪表盘页 + 事件流面板）。
+- 以上为另一工作线（v3.9.6）的成果并入本版本，功能级烟雾测试见 `test_tells_v2_functional.py`（环形缓冲封顶/标签事件/仪表盘形状/缺环安全回落）。
+
+## 架构重构（本次合入）
+
+- 拆分 god object `main.py`（5989→约 5680 行）：纯逻辑下沉 `humanizer_core/`（零 astrbot 依赖），可注入服务下沉 `services/`（KB/主动状态/语言画像），配置与状态经 facade 与统一 StateStore 收口。
+- 统一 `invoke_llm` 调用点（能力位折叠 system_prompt、单轮预算与超时）、统一原子写状态、统一后台任务生命周期（TaskRegistry）。
+- 行为不变式：接线签名、配置键、注入顺序与线上基线逐字段一致；全套测试基线重建（宿主口径 1216/3）。
+
+## 新增：真人感规则库扩容与严重度分级（tells v2）
+
+- **新增 9 条内置规则**（来源 公开真人感规则集 v3.0.0 的 25 条 patterns 增量，MIT，中文聊天场景机制级重写非照搬）：5 条注入型（禁对立句强调、禁铺垫式引入、克制破折号、禁堆叠修饰、禁模糊关联）+ 4 条质检型（自称 AI、宏大词升华、要点式列举、双破折号）。质检型经自然口语误报探针校准至零误报；「假想对立面」一条因中文无法用正则高置信区分（"很多人觉得X，但其实Y"真人亦常说）而**未收录**（宁漏勿错）。
+- **引入 S1/S2/S3 严重度分级**（借鉴 公开同类规则集，MIT）：S1 单次出现即高置信、S2 按密度触发、S3 仅叠加时处理（对应 上游清单的 "weak alone"）。为全部 22 条既有内置规则补齐严重度；`RULES_VERSION` 1→2，升级时自动为缺字段的内置条目回填（**不触碰用户自建规则**）。
+- **改写终检清单**：QC 命中后的改写指令追加"五条最易存活的 tells"复核段（不是X而是Y / 单句断言 / 破折号 / 三连排比 / 加粗小标题），防改写后痕迹复活。
+- ⚠️「不是X而是Y」刻意归入**注入型**而非质检：中文口语「不是不想去，而是没时间」属自然表达，做正则必误杀。质检型只收高置信、口语罕见的痕迹，宁漏检不误触发整轮改写。
+
+## 新增：注入节奏改为严重度感知子集轮换 + 贴尾注入
+
+- 规则池扩容后会顶到注入封顶（20 条）导致末尾静默丢弃；且长对话里同批规则反复出现会被模型钝化。现改为：**S1/S2 核心每轮恒注入，S3 风味规则每轮轮换 2 条**（新纯函数 `select_inject_subset`）。总注入量稳定在封顶内，规则保持新鲜，且无未载入告警。
+- **注入位置贴近对话末尾**：规则段优先经 `extra_user_content_parts` 追加（`mark_as_temp` 不进历史、不累积），生成前最后一刻最可见（ST Author's Note 的 @depth 同理）；旧框架自动回退拼 `system_prompt`（v3.5.2 原行为，tells 在旧框架不消失）。
+- 轮换游标为进程内计数（展示性轮换，无需持久化）。
+- **功能级验证**（`tests/test_tells_v2_functional.py`，宿主真框架实跑）：时间轴全扫描（3 组配置×素数步长×7~14 天）验证重排"严格前进、≤3 跳收敛、永不悬挂"；升级持久化往返（legacy→save→reload severity 不漂移）；真 `_rules_inject_text`/`_inject_rules_tail` 实跑（轮换与纯函数模型逐字一致、真 TextPart `_no_save` 生效、旧框架回退 system_prompt）。
+
+## 新增：时段体系——按星期前缀 + 活跃时段白名单
+
+- **免打扰时段（`proactive_quiet_hours`）扩展星期前缀**：支持 `mon-fri 01:00-07:00`、`sat+sun 00:00-23:59`、`0-4 09:00-18:00`（数字 **0=周一**…6=周日）等写法；不带前缀行为与旧版**逐字一致**（跨天、多段语义不变）。跨天段的星期按**起始日**归属（如 `fri 22:00-02:00` 覆盖周六凌晨）。
+- **新增 `proactive_active_hours`（活跃时段白名单，默认空=不限制）**：配置后仅在其内主动发消息（与勿扰时段取交集）；时段外到期的主动消息显式重排到下一次进入活跃窗口，避免倒计时悬挂。控制台主动消息页同步展示。
+
+## 测试
+
+- 新增 `tests/test_tells_v2_and_windows.py`（31 用例）：严重度规范化/迁移回填/排序/子集轮换/终检清单；星期时段解析（含跨天归属、旧格式零回归）、活跃窗口、边界重排。
+- 基线：宿主 venv 全套 **1269 passed / 3 skipped / 35 subtests，exit 0**（连跑两遍一致）；无宿主解释器口径 1237/35。
+- 配置：净增 1 键（`proactive_active_hours`），**零键丢失、零默认值变更**。
+
+# v3.9.5（2026-09-10）
+
+性能与可靠性 + 全面审查修复版本：修复两项确定性缺陷（防抖配置错组、KB 同步计数未定义），建立 KB 索引指纹、检索缓存、LLM 调用预算与后台任务统一生命周期；随后进行的全面审查又揪出并修复 1 项阻断级缺陷与 8 项确定问题。不新增对话行为功能。
+
+## 修复：全面审查发现的问题（v3.9.5 复审）
+
+- **KB 索引指纹从未落盘（阻断级）**：`_kb_state_path` / `_kb_index_state` 在 `_init_time_stores()` **之后**才被重新赋值，把该方法刚加载的持久化指纹覆盖回 `None` / `{}`。后果：指纹文件永不写出、每次重启都因"无历史指纹"把索引判为不新鲜，重新枚举全部文档并在需要时触发整库重传，重启后检索长期不可用直到后台同步跑完。现将两个属性的预声明移到 `_init_time_stores()` 之前。
+- **旧框架下主动消息直接失效**：`_proactive_chat` 里 `cron_event` 只在 `if HAS_AGENT_PIPELINE:` 分支内被赋值，却在分支外被无条件读取——旧框架（无 Agent Pipeline）会抛 `NameError` 并被外层 `except` 吞成"主动聊天失败"，**轻量 `llm_generate` 回退路径永远走不到**；pipeline 异常时该 `NameError` 还会顶掉本该生效的防重复生成护栏。现于分支前先绑定 `cron_event = None`。
+- **规则 id 同毫秒碰撞**：`_gen_id()` 原为毫秒时间戳，同一毫秒内的连续调用生成完全相同的 id；而 `toggle_rule` / `delete_rule` / `find_rule` 都按 id 匹配，一次操作会同时命中多条规则（停用一条却停用一片）。现追加进程内自增序号。
+- **语言画像损坏即抛异常**：`lang_mirror` 对 `msg_count` / `len_sum` 等计数器直接 `int()`，画像文件被手改或截断写入非数字时抛 `ValueError`，违背模块"输入非法一律安全回落"的承诺（表现为该条消息被整体丢弃）。现统一走安全取整。
+- **语言画像内存无界增长**：30 天剪枝结果原先只写进文件、**没有回写内存**，长期运行的进程会一直保留所有见过的会话画像。现剪枝后同步收缩内存表。
+- **`retrieval_timeout` 默认值错配**：schema 默认已改为 5 秒，但代码回落分支仍是 30.0，配置键缺失时会退回旧值。现统一为 5.0。
+- **分组迁移静默丢键**：旧组（`life` / `debounce` / `commitments` 等）被删除时，只搬迁显式清单里列出的键，用户遗留的其它键随组一起丢失。现按源组→目标组兜底搬运（目标已有同名键则不覆盖）。
+- **`commitments_debug` 死配置**：该开关已在配置面板声明并被迁移，但全代码无任何读取点，等于无效开关。现接入承诺初筛的命中/未命中诊断日志。
+- **同步检测异常被静默吞掉**：KB 已同步检测块为 `except: pass`，`list_documents` 签名不符时会被无声吞掉并转为整库重传，难以定位。现改为 `warning` 留痕（行为不变）。
+- 清理：删除死方法 `_commit_pending`、未用导入 `due_for_date` / `ProviderRequest`、未用常量与无效 `try/except`；移除 `_ensure_kb` 中重复计算且从未使用的 `_kb_desc`（后台同步任务会自行计算）。
+
+## 修复：两项确定性缺陷
+
+- **防抖数值配置失效**：`_d_num` 此前读取已废弃的 `debounce` 组（分组重构回归），`debounce_time` 与全部 adaptive/等待参数实际从未生效、恒用默认值；现与 `_d` 同读 `typing` 组并走同一键映射。
+- **KB 同步成功路径 NameError**：`_kb_sync_job` 成功日志与无 `list_documents` 分支引用未定义的 `builtin_cnt/user_cnt`，异常被外层吞掉后把已上传完成的索引误标为失败（本轮检索禁用 + 重启重传）。
+
+## 新增：KB 索引指纹（内容级新鲜度）
+
+- 语料内容 + embedding provider + 索引结构版本计算 SHA-256 指纹，持久化于 `plugin_data/.../kb_index_state.json`；`/style_import`、`/style_refine` 成功后即刻失效索引与检索缓存，源文件外部修改经 (mtime,size) 提示缓存检测。**修复"批次数量相同而内容已换"时旧索引被继续使用的盲区**。升级路径友好：首次检测到无指纹而上报批数齐全时**直接认领现有索引并补写指纹（不重传）**，仅当指纹存在且与当前语料/模型不符时才真正后台重建——避免 12k 语料被无谓重传。
+- 同步任务带代际号：被更新触发的旧任务不得覆盖新任务的就绪状态与指纹；文档列表改为 `count_documents + 分页 list_documents`（不再受框架默认 100 条截断）；`/style_index` 清指纹强制内容级重传，同步进行中拒绝重复触发并如实提示后台受理。
+
+## 新增：检索缓存与并发合并
+
+- `_retrieve_examples` 增加进程内有界 TTL-LRU（默认 256 条 / 60 秒，可配）与 in-flight 合并：相同查询短期复用，并发请求共享一次底层 embedding/rerank 调用；缓存 key 含会话/指纹/参数，语料或模型变更自动失效；异常/超时/空结果不落缓存，取消任一等待者不影响共享任务。
+- `retrieval_timeout` 新装默认 30→5 秒（已保存配置不变）：检索失败快速回退纯风格注入，不再长时间挂住生成前钩子。
+
+## 新增：LLM 调用预算与单轮收敛
+
+- 深度改写引入单轮预算：候选模型上限（默认 2）+ 共享总超时（默认 120 秒）+ 全局并发信号量（默认 2），单候选超时受剩余预算封顶——最坏等待从"候选数 × 60 秒"收敛为总预算。
+- **QC 与首次改写合并**：命中质检规则时针对性指令随首次改写一并下发；本轮已尝试过改写则 QC 只验证不再起第二条完整改写链（单条回复最多一次插件改写 LLM）。⚠️ 取舍：若首次改写因预算/传输失败无结果，本轮不再二次尝试 QC 修复（下一轮仍可修复），换取成本与延迟上限。
+- 主动消息防重复生成护栏（默认开，可关）：pipeline 已实际运行（异常/超时）且无结果时，本轮不再轻量重新生成，避免同一消息双倍模型消耗。
+
+## 新增：后台任务统一生命周期
+
+- 新增任务注册表：承诺确认、生活时间线生成、KB 自愈 resync、配置保存等 fire-and-forget 任务全部登记，done callback 消费异常；`terminate` 先关闭注册表再统一取消等待——修复热重载后旧实例 LLM 任务残留。
+- 承诺确认同会话单飞（进行中直接正则落账）；生活时间线按日期单飞且置位先行（消除"检查与置位之间"的并发窗口，冷启动并发不再重复生成）。
+
+## 配置新增（新增 7 键 + 1 项默认值调整；默认值均不改变既有行为）
+
+- `retrieval_timeout` 新装默认 30→5 秒（1 项默认值调整，已保存配置不受影响）
+
+- 「表达 · 说话风格与语料」：`retrieve_cache_enable` / `retrieve_cache_ttl` / `retrieve_cache_size`
+- 「表达 · 润色去痕」：`rewrite_max_candidates` / `rewrite_total_timeout` / `llm_rewrite_concurrency`
+- 「主动 · 聊天与承诺簿」：`proactive_regen_guard`
+
+# v3.9.0 (2026-09-09)
+
+配置分组重构 + 主动消息 v2 + 真人感 tells 补库。新功能全部默认关或跟随既有总闸，不重载旧行为（925 pytest 全绿）。
+
+## 变更：配置分组重构（语义分区）
+
+- **10 组 → 6 组**：按「表达 / 感知 / 主动 / 发送」四个语义分区重新归类——说话风格与语料（并入真人感规则开关）、润色去痕、时间与节奏（并入一天状态）、情绪惯性、聊天与承诺簿（并入承诺簿全部键）、延迟分段与防护（并入消息防抖与发送纪律）。组名带分区前缀，配置面板与控制台同步生效。
+- **自动迁移**：旧分组的用户设置在插件启动时自动搬入新分组（34 键映射；两个调试开关按「或」语义并入目标组调试键），无需重新配置；迁移后旧分组删除。
+- 同批将段间隔五项参数开放为可配置（默认值即原常量，行为不变），并对配置提示与 README 做了正式化文案梳理。
+
+## 新增：语言风格趋同（沟通顺应）
+
+- **渐进式表达趋同**：按会话统计用户的语言习惯——平均消息长度、emoji/句尾「~」/笑声使用率、高频短语（2~4 字 n-gram 累积，无分词依赖）——互动满 30 条后注入「对方语言习惯」观察块，让回复的表达方式逐步向对方靠拢。样本不足不注入（刚认识就镜像反而不自然），趋同度随互动量对数增长。
+- **采集零成本**：纯统计无 LLM 调用，单条消息只分析前 200 字；短语采集持续累积原始计数、渲染时才过滤（修正在采集侧提前过滤导致频次无法跨消息累积的实现错误），带黑名单（粗口/敏感）与纯虚词过滤；画像 30 天不活跃自动清理。
+- 配置于「表达 · 说话风格与语料」组：`lang_mirror_enable`（默认开）/ `lang_mirror_min_msgs`（30）/ `lang_mirror_topk`（3） / `lang_mirror_profanity_filter`（默认开；关闭后粗口口头禅也参与镜像，虚拟词与数字噪音过滤不受影响）。注入指令明确「习惯不是指令，切勿堆砌或逐条复述」。
+
+## 新增：主动消息 v2 —— 话题来源 + 轻追问 + 沉默自适应（第三轮 GitHub 调研落地）
+
+机制来源：lonely-mai（MIT）话题四模式加权混选、hermes 分阶段追问、Deepseek_chatbot 沉默自适应——均按 Humanizer 既有形态重写，未照搬代码。
+
+- **话题来源选择器**（`proactive_topic_mode` 默认 mixed）：主动消息的开口由头四选一——`history`（最近往来多行摘要注入，跳过 [主动消息] 代发行、引号/换行转义，指令明确"转述、不要用引号引用对方原话"以避开问候质检的引用拦截）/ `life`（复用一天状态"此刻正在做的事"）/ `preset`（预置话题池，一行一个可选 `|权重`；冷却期 7 天内刚用过的降权 ×0.25 抑制翻来覆去）/ `mixed`（`history=4,life=3,preset=3` 加权混选）。素材缺失自动跳过、全缺回落 free（旧版行为）；话题块追加在模板末尾，自定义模板零改动生效。
+- **未回信轻追问**（`proactive_followup_enable` 默认关）：常规主动消息发出后对方未回，隔 12~20 分钟（可配）按 0.6 概率（可配）再轻碰一句；第 2 条概率自动减半、话术分「轻碰/收尾」两档（不质问不催促、措辞避开问候质检拦截特征）。护栏：用户一回复整链作废（_track_activity 即时 + 调度循环兜底双保险）；连续未回复计数超上限（默认 2）不再布防；冷落弧线到「抽离」档不再追；勿扰时段压单到清醒时段；追问轮不开新话题、情绪块优先级 弧线 > 追问 > pout（同源情绪只发一版）。
+- **沉默自适应间隔**（`proactive_silence_scale_enable` 默认开）：对方连续不回时，重排间隔按未回复计数放大 ×(1+0.3n)（n 封顶 3 → 1.3/1.6/1.9 倍）+ 4 小时上限（均可配）。顺带修正 `_track_activity` 旧顺序（先按旧计数算延迟后清零），现在先清零再按"从零起的周期"重排。
+- **状态文件 v2→v3**：新增 `followups`（每会话追问链 stage/due_ts/armed_ts）与 `topic_used`（话题使用时间，30 天剪枝 + 200 条容量护栏）；向后兼容读 v2/旧扁平；stale 清理、白名单清理同步回收追问链；重启时已到期追问顺延一个周期不补发。
+- 新增 12 个配置键（主动聊天组）；测试 test_proactive_v2.py 41 项（行为测试 37 + 结构契约 4）。
+
+## 新增：真人感 tells 补库（内置规则 14→22）
+
+- 来源 公开 AI 写作痕迹项目（MIT）10+ AI 写作痕迹的对话向子集，中文机制级重写非照搬。
+- **质检 4 条**（QC 命中触发一次性改写，模式刻意保守、宁可漏检不误杀）：升华句「这不仅是 X 更是 Y」、模糊归因「研究表明/专家表示」、说教开头「记住：」、总结开头「总之，」。
+- **注入 4 条**（生成前约束）：禁作文式收尾、禁说教语气、克制排比（「既又还」三连/工整对仗）、禁戏剧化揭示收尾（冒号揭底/单句断言耍帅）。
+- 走 `migrate_builtins` 幂等迁移，存量用户自动补齐、已停用规则状态保留；注入型启用 15 条 < 渲染封顶 20。
+
+# v3.8.0 (2026-09-08)
+
+时间感知收尾 + 主动性增强 + 情绪体系深化。新功能全部默认关或旁路注入，不重载旧行为。
+
+## 修复：可行性复审三轮（终态 870 pytest 全绿，框架源码 call_event_hook/star_handler 实锤）
+
+- **①承诺捕捉时序缺陷（P1）**：框架 handler 按 priority 降序稳定排序、`call_event_hook` 顺序 await——`_capture_commitment` 与 `humanize_response`（深度改写，重写 `resp.completion_text`）同为 priority 0 且注册在前 → 捕捉到的是**改写前文本**，改写删弱承诺句时记成"假承诺"（次日追问穿帮）。修复：`@filter.on_llm_response(priority=-10)` 显式排到改写之后；AST 契约钉死 priority 存在。
+- **②新会话双向行噪音（P3）**：首条用户消息时 ai 侧无记录，单独渲染「对方最后发言 刚刚」零信息量——抑制条件从"双侧均刚刚"收紧为"所有在场侧均刚刚"。
+- **③迟到话术 12 小时硬上限（P3）**：整夜宕机后补发"我 480 分钟前来晚了"观感怪异，超 720 分钟静默不提（交给投递时刻时间块按当下时段处理），schema hint 同步。
+- **④历法/时间感知方案共存核查**：本机 plugins 目录无 时间感知方案 → 历法双向复注非现症，维持 include_calendar hint 二选一指引，不新增在位检测（唯一现实用户场景不触发）。
+- 复核确认无害：承诺捕捉不排除 cron（主动消息同样是 bot 说出口的合法承诺来源，兑现汇报文本无未来锚点不会自我激励）；防抖结算后 pipeline 正常触发捕捉；`_cm` 系新键在配置未落盘时走代码默认（关），与 config_migrate 无耦合。
+
+## 新增：双向间隔感知（LAST_CHAT，time_state.json v3）
+
+- **动机**：既有 gap/连续性是"距上次交流"合并口径（用户与 Bot 共用一个时间戳），存在盲区——Bot 主动消息发出后对方一直没回时，间隔按 Bot 自己最后发言计算，显得"没隔多久"。本版把用户侧与 Bot 侧拆成两条独立时间线。
+- **实现**：`time_flow.py` 纯函数 `render_last_chat_line(user_ts, ai_ts, now)`，注入「对方最后发言 X · 你最后发言 Y」行；分档 刚刚(<60s)/X 分钟前/X 小时前/X 天前/超一周回落 MM-DD（相对时间渲染思路移植自历法/时间感知方案的同类实现，MIT License，改写为纯函数并入本模块）。双侧都在 1 分钟内不注入（即时对话噪音）；仅单侧有记录只显示单侧。
+- **存储**：time_state.json **v2→v3**，新增 `user_seen`/`ai_seen` 两表；`last_seen` 合并语义不变（gap/连续性/节奏全部零改动）。向后兼容读 v2（user 侧拿合并时间戳回填、ai 侧不回填等真实记账收敛，宁缺勿错）；三处落盘（统一维护循环/terminate 刷盘/启动加载）按主表键集 `restrict` 同步收缩。
+- **配置**：`time.include_last_chat`（默认关，需 enable_gap 开）。
+- 新增 test_last_chat_line.py（纯函数 20 项 + v3 存储兼容 8 项）+ test_last_chat_wiring.py（AST 契约）。
+
+## 新增：时间行为规则入库（内置规则 10→14）
+
+- 参考历法/时间感知方案 TIME_GUIDE 的适用子集（MIT；按 Humanizer 的 time_context 注入形态改写，非照搬措辞），新增 4 条 inject 内置预置：时间只依据注入 / 时间口语化 / 间隔调语气 / 历法自然贴合。走 `migrate_builtins` 幂等迁移，存量用户自动补齐；已删除的不复活。
+
+## 新增：冷落降温弧线 + 情绪恢复曲线分档
+
+- **弧线**（`emotion.py` 纯函数 `cold_war_stage`/`cold_war_proactive_directive`，配置 `emotion.emotion_cold_war` 默认关）：对方持续沉默时主动消息语气按沉默时长递进 想念(1d)→试探(3d)→失望(7d)→抽离(14d)，阈值可配（`cold_war_thresholds_days`）。数据源为用户侧沉默时刻（Bot 自己的发言不打断弧线）；appy 心情下不注入；命中弧线时**顶替**按未回复条数累计的 pout 块（同源情绪只发一版，防"小委屈"与"失望"叠加成刻薄）。抽离档只收着不归零——仍留极轻触点，关系地板不归零。
+- **恢复曲线**（`resolve_half_life_hours`）：缺席达 `emotion_absent_tier_days`（默认 2 天）后情绪强度改按 `emotion_absent_half_life_hours`（默认 48h）慢衰——久别的想念/小情绪余温残得更久，与 v3.7.0 重逢文案配合；只允许比常规半衰期更慢，地板 NEUTRAL_FLOOR 语义不变。
+- 新增 test_emotion_cold_war.py + test_cold_war_wiring.py。
+
+## 新增：主动消息迟到补发话术
+
+- 主动消息比预定触发时刻晚发超阈值（宕机跨点/免打扰压单/生成慢）时，prompt 追加「来晚了/让你等了」指令（`proactive.proactive_late_threshold_minutes` 默认 15，0=关）。素材参考历法/时间感知方案 `<LATE_PROMPT>`（MIT）改写。调度循环在重排前捕获到期时刻传入 `_proactive_chat(due_ts)`。
+- 新增 test_late_delivery.py。
+
+## 新增：承诺簿（默认关，AGPL 同源机制参考）
+
+- **闭环**：Bot 回复里的未来承诺（"明天帮你查…"）→ 正则初筛（显式时间锚点+承诺句式，疑问/客套形态排除，宁缺勿滥）→ 可选后台 LLM 复核规范化（超时/失败回落正则结果，绝不阻塞响应链）→ 落账 commitments.json → **到期窗口内**（due 日起 `remind_grace_days` 默认 2 天，出窗静默防骚扰）注入「你答应过对方的事到期了…」行（对话侧 + 主动消息侧同源）→ 兑现/作废用 `/commitment_list` `/commitment_done` `/commitment_drop` 手动核销（兑现喂一发好心情）；超 7 天未核销自动作废。
+- **机制参考** xuqian13_autonomous_planning_plugin（麦麦规划插件，AGPL-3.0，与本插件同许可证）"承诺→pending→次日核销"设计，按 Humanizer 状态/注入范式独立实现，未照搬代码。
+- 每会话 pending 上限 6 条；默认仅私聊（`track_groups` 可开群聊）；落账计数入 stats（`commitment_captured`）。
+- 新增 test_commitments.py（39 项，含假阳排除用例）+ test_commitments_wiring.py（AST 契约 12 项）。
+
+## 变更与修复
+
+- README 补 v3.6.0 小节（分段发送/连续性五档/规则补库），并修正 v3.7.0 小节描述（归档散件+zip 同步）。
+- 统计键预注册补 `commitment_captured`（v3.6.0 教训：未预注册的键 `_bump_stats` 静默丢计数）。
+
+# v3.7.0 (2026-09-07)
+
+## 修复：审查第二批（P1–P4，会话卡死防护 + 分段发送健壮性）
+
+- **P1 消息路径检索超时（v3.4.5 事故同型，热路径）**：`_retrieve_examples` 的 `kb_manager.retrieve` 无超时——底层走 embedding/rerank 供应商 HTTP，端点挂起=on_llm_request 钩子卡死、会话管线排队（`enable_retrieval` 默认开）。修复：`asyncio.wait_for` 包裹，新配置 `style.retrieval_timeout`（默认 30s），超时按既有"检索失败回落纯风格注入"分支处理。附带对齐 `enable_retrieval` 代码默认值与 schema（true）漂移。
+- **P2 风格提炼 LLM 超时（全插件最后一处漏网）**：`_call_llm_for_profile` 的 `llm_generate` 无超时——端点挂起时命令/web 永久挂起且 `_building` 标志不释放（后续提炼全部 409）。修复：wait_for 包裹，新配置 `style.extract_timeout`（默认 120s），覆盖 style_build/语料导入/WebUI 提炼/启动自动提炼全部 6 入口。
+- **P3 分段发送逐段防护**：旧实现清链后逐条 send，任一段抛异常（网络/风控）→ 剩余段永久丢失、日志却写「整体放行」（假放行；首段失败=整条回复凭空消失）。修复：per-bubble try/except，失败即停，**失败段+未发段回填待发链交框架原路发送兜底**；已发部分照常登记进 extra（内容守恒：已发+回填=全文）；外层日志措辞改「跳过本功能，原文交框架」。
+- **P4 分段发送装饰旁路限制告知**：分段消息由插件在 on_decorating_result 钩子内直发，框架的 t2i/TTS/引用回复/@/回复前缀对其不生效（`derive` 继承 use_t2i_ 无效安慰——唯一消费点在框架后置装饰，aiocqhttp send 不看）。`split_enable` hint 补「已知限制」告知；同步修正 split docstring「拼回与原文一致」的不实表述（换行会被拍平）。
+- 新增测试：P3 行为 3 项（中段失败回填/首段失败全回填/全部成功不回填，含内容守恒断言）+ P1/P2/P3 AST 契约 5 项。
+
+## 修复：全面审查发现的三处缺陷（2026-09-07 当日复审）
+
+- **①（严重，可复现卡死）** `split_reply_bubbles` 在 `threshold=1`（含配置 0/负数被钳到 1）时死循环：兜底硬切条件 `cut < threshold//2` 在 threshold=1 时即 `0 < 0` 恒 False，窗口无切点标记时 cut=0 空切不前进，纯 CPU 死循环卡死整个 asyncio 事件循环（实测复现，timeout 杀出）。split_enable 虽默认关，但用户一旦把「分段阈值」改成 0（直觉是"全拆/关闭"）首条长回复即全平台无响应。修复：`cut <= 0 or cut < threshold//2` 都走硬切（typing.py），每轮至少前进 1 字符；+4 守护测试钉死 threshold=1/0/负数终止性与内容守恒。
+- **②（v3.7.0 自身）** 相识天数原实现 `(now-first)//86400 + 1` 是 UTC 秒天不是自然日：东八区早 8 点前仍算前一天、23:50 首聊 00:10 即跳第 2 天，与 CHANGELOG「按自然日进位」承诺不符。修复：新纯函数 `time_flow.acquaintance_days`（CHINA_TZ 自然日差+1，非法/回拨返回 0），`_days_line_for` 改调它；+5 边界测试（午夜边界/深夜首聊/UTC 陷阱/多日/非法入参）。
+- **③（文档级）** `time_flow.__all__` 漏收录 `basic_schedule_to_timeline`/`rhythm_heat`/`RHYTHM_DIRECTIVES`（main.py 显式导入在用）——补齐，静态校验不再漏报。
+
+## 修复：时间上下文进历史（mark_as_temp）
+
+- **依据**：历法/时间感知方案（MIT）的双路注入架构——静态规则进 system_prompt 保 Prompt 缓存，动态"当前态"数据以 `mark_as_temp()` 注入当前轮、历史持久化时被框架剥离。本插件 v3.0 起的 `<time_context>` 块一直走常驻注入：每轮对话在历史里累积一份过期时间块（浪费 token），且历史里的「当前时间：9月5日」与新注入的当前时间互相矛盾。
+- **实现**（`_inject_life_context`）：`TextPart(text=ctx).mark_as_temp()`；框架无该方法时退回常驻注入（原 v3.0 行为），旧框架 dict 降级路径不变。
+
+## 新增：情绪时间衰减 + 重逢情绪指令
+
+- **依据**：原衰减只按消息次数（每条 ×0.6），不按时间——用户隔三天回来，分离时的 sulky 0.8 原封不动带进回复，与"情绪随时间淡去"的人间常识相悖。时间轴借鉴 emotion-engine 的 `pre_turn_decay`（每轮先按流逝时间衰减）。
+- **实现**（`humanizer_core/emotion.py` 纯函数）：`decay_time(state, elapsed_seconds, half_life_hours=8.0)` 半衰期模型（默认 8 小时=睡一觉基本消散），衰减到 `NEUTRAL_FLOOR` 以下回 neutral；时长取自 `persona_state.ts`（v3.5.1 起已持久化，重启也正确）。
+- **接线**：`_track_activity` 内**时间衰减先于逐条衰减**；变化比较基线改用内存原状态（否则时间衰减单独生效时会被"无变化"判断跳过写回，衰减结果永远滞留磁盘态）。配置 `emotion_time_half_life_hours`（0=关闭）。
+- **重逢组合指令**：`reunion_directive(state, label)`——隔了几天/久别（复用 v3.6.0 连续性分档）时，sulky/appy 指令换成「淡了但温度还在」的重逢版（小情绪早淡了、更像老朋友重新联系，不翻旧账不过度热情）；`_emotion_directive_for` 优先采用，配置 `emotion_reunion_inject`（默认开）。
+
+## 新增：历法感知（农历/节气/传统节日 + 敏感日护栏）
+
+- **依据**：历法/时间感知方案的 `<LUNAR_STATE>`/`<ALMANAC_STATE>` 与 公开方案 的节气天文计算——中国语境里"知道今天是中元节"是时间感最强的信号；公开方案 的敏感日规避是必要护栏（清明主动嗨=灾难）。
+- **实现**（`humanizer_core/time_flow.py`）：`calendar_facts(now)` 基于 lunar_python（纯 Python 软依赖，缺库静默关闭）输出农历日期/传统节日/当日节气；敏感日三路判定=关键词文本包含（清明等）+ 固定农历日期表（中元七月十五/寒衣十月初一，不依赖节日库覆盖度）+ 固定公历日期表（国家公祭日 12-13/九一八/七七/防灾减灾日 05-12）；`build_calendar_line(facts)` 常规日输出「今天是农历七月十六 · 中秋节 · 处暑」，敏感日（护栏开）替换为「适合安静贴心话题，别庆祝别开玩笑」。
+- **接线**：`_calendar_line_cached` 按日单键缓存（配置变更需重载生效）；`build_state_block` 增 `calendar_line` 参数。配置：`include_calendar`（默认开）/`calendar_sensitive_guard`（默认开）/`calendar_sensitive_extra`（自定义敏感词追加）。
+- ⚠️ 若安装历法/时间感知方案等历法插件会重复注入历法——schema hint 已注明二选一。
+
+## 新增：相识天数感知
+
+- **依据**：公开方案 的「感情被时间喂大」——认识天数是关系的时间刻度，让「认识这么久了」类表达有真实依据。
+- **实现**：`time_state.json` 升 v2 增 `first_seen`（`load()`/`save()` 向后兼容，旧调用零改动）；v1 旧文件以 last_seen 回填（保守锚点，宁小勿大）；三个记账点（用户消息/bot 发送×2）`setdefault` 触碰，落盘与 30 天 prune 同步收缩。
+- **接线**：`_days_line_for` 按自然日进位（首日=第 1 天）输出「这是你们认识的第 N 天。」；配置 `include_first_seen` **默认关**（偶尔提有纪念感，每轮注入显得刻意）。
+
+- 新增 test_emotion_time_decay.py / test_time_state_first_seen.py / test_calendar_facts.py / test_timeflow_v370_wiring.py（AST 接线契约）。
+
+# v3.6.0 (2026-09-06)
+
+## 新增：分段发送（多气泡连发）
+
+- **依据**：同类拟人项目生态共识（hermes-humanlike / Deepseek_chatbot / KouriChat / nonebot-moellmchats / clone-chat 全部具备），长回复按句读拆成多条短消息连发是聊天拟人「入场券」级能力；本插件 `segment_gap()` 自 v3.4 起即为分段预留但一直未接线，本次正式启用。
+- **拆分算法**（`humanizer_core/typing.py` 纯函数 `split_reply_bubbles`，机制级参考 hermes-humanlike 重写）：全文 ≤ 阈值（默认 40 字）不拆；先按换行/句末标点切句（保留引号括号闭合，英文句点不算切点防切碎小数）；短段（<8 字）并入上一条；超长单句在逗号/分号处兜底切；段数上限 3（2~5 可调）。只切不造：所有段拼回与原文一致。
+- **接线**（`_typing_delay_before_send` 内）：首条前仍走补足延迟；拆出多段时清空待发链（复用复读拦截的 chain=[] 手法）逐条 `event.send`，段间 `segment_gap()`（0.5~3s，两成概率 4~8s「边想边打」）；每条发出前检查新入站消息，到达即中止剩余段（被打断的真人不会自顾自发完）；已发文本登记进事件 extra 防判重误杀；待发链含非纯文本组件（图片/语音等）整体跳过。主动消息完整管线（C1）同样生效（零延迟直达），轻量降级路径不拆。
+- **配置**：打字延迟组新增 `split_enable`（默认关，真机观察后手动开启）+ `split_threshold`/`split_max_segments`/`split_min_part`。
+- 新增 test_split_bubbles.py（纯函数边界 15 项）+ test_split_wiring.py（AST 接线契约）。
+
+## 新增：对话间时间流逝连续性感知
+
+- **依据**：hermes-humanlike 的 time-aware continuity（连续聊天/短中断/当日回归/隔夜/数日缺席分级），把「距上次交流」从单纯时长升级为关系语感。
+- **实现**（`humanizer_core/time_flow.py` 纯函数 `continuity_label`/`continuity_text`）：≥30 分钟（沿用 `gap_threshold_minutes` 阈值，与节奏档互补——节奏管半小时内回复快慢，连续性管半小时以上开口方式）分五档注入指令行：短中断=接上话头不用打招呼；同日回归=承接今天话头；隔夜=衔接昨天的事、别装作没停过；隔几天=自然问问近况；一周以上=久别重逢不追问。分档先看绝对间隔再看跨自然日（跨午夜但不足 2 小时仍算短中断）。
+- **接线**：`_time_context_block` 注入（读 `_prev_seen`，与节奏/gap 同源防误判）；配置时间流动组新增 `continuity_inject`（默认开）；`build_state_block` 增 `continuity_line` 参数。主动消息（cron）同样注入——bot 主动开口时也知道自己多久没联系对方。
+
+## 新增：真人感规则补库（5 条内置）
+
+- **依据**：公开真人感规则集（43.6k★，MIT）35 条 AI 写作痕迹中直接命中聊天场景的 3 条——#20 客服腔收尾、#21 免责开头、#22 过度附和（"Great question!" 类），机制级重写为中文聊天语境，非照搬。
+- inject 3 条：禁强行提问收尾（别每条都用问句结尾）/ 禁客服腔收尾 / 禁过度附和开场；qc 2 条：客服腔命中检查、过度附和命中检查（只拦开头形态防误杀真人表达；「祝你生日快乐」等祝福语不误伤）。走 `migrate_builtins` 幂等迁移，存量用户自动补齐；当前内置 10 条，距 20 条生效封顶仍有余量。
+
+## 修复：全面审查发现的三处发送链缺陷（2026-09-06 当日复审）
+
+- **①（潜在静默失效）** `split_sent` 统计键未在 `_stats` 初始化字典中预注册——`_bump_stats` 只累加已存在的键，会静默丢计数。已补预注册（并同步扩展 test_rewrite_stats 键集合契约至 11 键）。
+- **②（重大，真机必崩）** 分段发送最初实现用 `event.send(bubble)` 直接发字符串——实测框架 4.27.4 的 aiocqhttp 适配器对裸 str 会迭代 `message_chain.chain` 得到单字符并调 `str.toDict()` → **AttributeError**，且此时待发链已清空 = 整条回复丢失。已改为 `result.derive([Plain(bubble)])`（与框架 RespondStage 自身多段发送同一手法，继承 use_t2i_/use_markdown_ 元数据），并调整顺序为**先构造全部消息链、后清链**，构造失败时放行原文。
+- **③（历史遗留，57 处）** 审查中发现插件自早期版本以来所有命令回复都写的是 `await event.send("字符串")`——同属上述崩溃形态（推测因日常走 WebUI 控制台而从未暴露）。已加模块级 `_plain_chain(text)` 助手并 AST 验证批量包装全部 57 处（含 event/reply_to 两类接收者、多行调用、三元与 join 表达式逐一核对），新增 test_send_chain.py 回归钉死「禁止裸字符串 send」。
+
+# v3.5.2 (2026-09-07)
+
+## 变更：打字延迟改为补足式
+
+- **依据**（2026-09-06 日志 112 轮实证）：v3.5 链路的自然耗时（防抖等待+记忆检索+agent 工具循环）中位约 49 秒、p90 约 95 秒，旧「额外叠加」式打字延迟（中位 7 秒）仅占总延迟中位 12%，只推高总响应——p90 总延迟逼近两分钟（cold 附加 +10~25s 最恶劣），节奏引擎 hot 快回窗口（1.5~4s）被自然耗时完全淹没、实际从未生效；自然耗时不超 5 秒的轮次仅 1/112，「防秒回」的设计前提已被链路演化架空。
+- **语义变更**：`compute_delay`/`apply_rhythm_delay` 的输出从「额外等待时长」变为「对方消息到达后的总延迟目标」，实际 sleep = 目标 − 已自然耗时（`settle_delay`，下限 0）。自然耗时已达标时零等待（重链路常态）；链路变快（换快模型/关检索）时自动重新接管兜底。到达时刻取 `message_obj.timestamp`（防抖轮 reconstruct 复用原事件 = 第一条消息到达，含防抖等待）。
+- **日志**：补足生效时 info `[Typing] 补足延迟 Xs (目标Ys, 已耗Zs…)`；零补足降为 debug，不再每轮刷屏。配置面板「打字延迟」组及节奏窗口各键 hint 同步更新为目标总延迟语义（数值与默认值不变，存量配置无需迁移）。
+- 新增 12 项测试（settle_delay 边界 + 接口契约 + 钩子 AST 接线），全量 644 绿。
+
+## 新增：复读拦截
+
+- **问题**（2026-09-06 日志实证，当天 5 对样本）：agent 模式下模型先用消息工具 `send_message_to_user` 发送回复，agent 循环继续后又生成一段内容几乎相同的「最终回复」，被 RespondStage 再次发出——QQ 侧收到两条复读（对方实测反馈「消息重复来了居然」）。框架 respond 阶段已有逐字精确匹配的原生防护，但当天 3/5 对仅差一个尾句号/句中空格即漏网。
+- **方案**：`on_decorating_result` 钩子（打字延迟挂点内、打字总闸之前）读取框架 v20260831 补丁登记的本轮已发文本，经 `humanizer_core/dedupe.py` 归一化（去空白/标点/emoji、转小写）后做三重判定——单条相似度（SequenceMatcher，autojunk=False）、前缀/包含（改写+追加型）、拼接串互含（分段发送后拼着重发）。命中即清空待发链，RespondStage 空链跳过发送。
+- **阈值**：默认 0.82，以当天真实样本校准（同文+标点差异 ratio=1.0 命中；一字之差 12 字短句 0.83 命中；正常「另说一段」<0.6 放行；强改写有增量型如「瑞幸9.9安排上」→「9块9的冰美式直接安排」约 0.14，设计上放行——有新信息非复读）。可配 `typing.dedupe_rewrite_threshold`；总开关 `typing.dedupe_rewrite` 默认开，不受打字「启用」总闸影响（修 bug 性质）。
+- **护栏**：宁漏勿误杀——异常/低置信/过短文本（归一化后 <8 字）一律放行，失效方向退化为现状而非吞正常回复；被拦样本记 DEBUG 全文日志供审计校准；契约测试含框架补丁在位自检（AstrBot 升级冲掉 v20260831 登记补丁时测试报警，防拦截静默失效）。
+- 新增 24 项测试（真实样本正例/反例 + 边界 + AST 接线契约 + 框架自检），全量 632 绿。
+
+## 新增：情绪惯性引擎
+
+- **三档情绪状态机**：平静（neutral）/ 有点小情绪（sulky）/ 心情不错（appy），强度 0~1；用户每发言一次强度 ×0.6 逐条衰减，低于阈值自动回到平静——让语气有跨消息的连续性，而不是每条回复都从零开始。
+- **安抚恢复**：用户消息命中安抚/积极词池（哈哈/谢谢/抱抱/喜欢你等 16 词默认池，可自定义）时情绪转向「心情不错」；衰减在先、安抚在后，冷却中的安抚依然能被感知；状态无变化不写盘。
+- **生气档可选**：沿用「主动聊天 → 未回复小情绪」开关作为总闸（默认关）——主动消息连续未回复后，对话回复也带轻微小情绪（该开关同时管主动消息文案与对话侧情绪），保持「微微生气是可选功能」的定位；情绪措辞克制（轻微委屈、轻轻嘟囔，绝不指责、绝不过激）。
+- **注入与防洗**：情绪指令行注入 system_prompt（平静时不注入、不占 token），位置在风格开关早退之前（独立通道，风格关闭照常生效）；深度改写链同步携带当前节奏与情绪状态，防止改写把语气洗回书面体。
+- **持久化**：persona_state.json 按会话保存（原子写 + 30s 刷盘 + 陈旧清理），重启不丢、损坏回落平静；新增「情绪惯性」配置组（总开关/衰减系数/安抚词池/强度上限）全部可调。
+
+## 新增：真人感规则集
+
+- **用户可见可调的对话规则库**（humaneness_rules.json，存插件数据目录、插件更新不丢失），内置五条预置（时间感知检查/语气词限额/禁宣誓句/长度镜像/禁表演感描写）首次启动幂等写入；内置规则不可删、只能停用，删除规则文件重启即恢复预置。
+- **两级执行**：注入型（默认开）把启用规则随系统提示词生成前约束，独立于风格开关；质检型（默认关，独立开关）生成后按质检关键词检查回复（逗号分隔多个、以 `re:` 开头按正则），命中触发一次针对性改写（复用改写链的候选模型切换与超时保护），改写后仍命中则放行原文——不循环、不吞消息。
+- **命令管理**（管理员，即时生效无需重启）：`/rules_list` 列表、`/rules_add <名字> <inject|qc> <内容>`、`/rules_del`、`/rules_on|off`、`/rules_reload`；web_api 新增 `GET /rules` 与 `POST /rules/save`（控制台规则页的接口契约已就位）。
+- 配置面板新增「真人感规则」组（注入/质检/调试三开关），组提示明确指路：规则内容的增删不在面板，请用控制台规则页或命令。
+
+## 优化：结构与热路径
+
+- **风格档案 mtime 缓存**：消除热路径每条消息最多 4 次目录扫描 + 8 次档案 JSON 解析（保存/删除档案自动失效；命令等冷路径保持直读）。
+- 配置访问器收敛为通用 `_group/_group_num`（15 个语义别名改为委托，新增功能组不再复制样板）；知识库描述块两处一字不差提取为 `_kb_desc()`；主动状态/统计的 30 秒落盘收敛进统一维护循环；7 个契约测试文件的 AST 助手去重至 `tests/_ast_helpers.py`。
+- 纯结构收敛、零行为变更。
+
+
+# v3.5.0 (2026-09-05)
+
+## 新增：对话节奏引擎
+
+- **热度三档自动分档**：按距用户最后发言的间隔把对话分为热聊（hot）/ 常态（warm）/ 冷场（cold），分档界线从「主动聊天」的沉默触发时长派生（默认 hot < 间隔×1/5、cold ≥ 间隔×2/3），调整主动消息间隔时分档自动缩放，无需单独维护。
+- **打字延迟与热度直接融合**：热聊覆盖为快回窗口（默认 1.5~4 秒，另加快打耗时，与消息长度保留相关性）——快回意图优先、忽略打字组「延迟下限」，仍尊重「延迟上限」；冷场在正常延迟上叠加「隔了一会儿才看到消息」的随机延迟（默认 +10~25 秒）；常态维持自然基线不动。取代旧版乘法系数（×0.6/×1.3 被干扰长尾掩盖、体感不明显）。
+- **节奏指令注入**：热聊提示回复轻快简短、冷场提示轻描淡写一句带过（常态不注入、不占 token）。
+- 新增「时间流动」分组配置：对话节奏引擎总开关、热聊/冷场分界比例、热聊快回窗口与冷场附加延迟窗口（共 7 键，全部可调；窗口下限>上限自动互换）。
+
+## 新增：检索重排（rerank）支持
+
+- 「人类对话风格」的检索示例注入此前按向量+关键词混合召回、不精排。现提供「检索重排提供商」下拉（列出模型供应商中已配置的 rerank 类型提供商）与「重排候选池大小」参数（默认 12，上限 30）——配置后先召回更大候选池再精排，提升示例相关性。
+- **留空 = 不干预**：跟随知识库自身的 rerank 配置（框架「知识库」页可按库单独配置重排），插件绝不因配置为空而拆除已有重排；选定后插件把本插件的检索库同步为该提供商（重排供应商不可用时自动跳过重排，不影响回复）。
+
+## 修复
+
+- **节奏恒热聊缺陷**：热度判断此前读「最后发言时间」，而该值在用户消息到达时即被刷新为当前时刻，导致间隔恒等于本轮处理耗时（十几秒）、永远判定为热聊——冷场/常态分支自功能上线起从未真正触发（2026-09-05 实测「感知不强」追查定位）。现改读上一条消息时间（与间隙感知文案同源），三档均可正常进入。
+- **存量知识库配置同步失效**：知识库复用路径调用框架 `update_kb` 时漏传必填的 `kb_name` 位置参数，TypeError 被异常兜底吞掉，存量库的描述刷新从未真正生效；同时 update 成功后框架会重建知识库实例，后续文档操作改用新实例。
+- **配置提示排版**：配置面板各提示文案中的 ⚠️ 注意事项统一另起一行（需配合框架 dashboard 样式补丁 `white-space:pre-line`；补丁属框架侧修改，随 AstrBot 更新丢失后需重打，存档含自动检测测试）。
+
+# v3.4.7 (2026-09-03)
+
+## 修复：启动日志误报「未配置 embedding provider，检索功能禁用」
+
+- **回归实证**：embedding provider 由框架异步实例化，必然晚于插件 initialize 的启动预同步；预同步探测拿空即打 WARN「未配置 embedding provider，检索功能禁用」并写负缓存，随后 on_astrbot_loaded 自愈重试——但 v3.4.6 建库后台化后 `_ensure_kb` 受理即返回 None，自愈的成功判断还停留在旧返回值语义，导致每次启动连打两条误导 WARN（2026-09-03 日志 15:50:52 / 23:29:47 两例），而检索实际已后台就绪。
+- **启动期静默**：`_ensure_kb` 新增 `_framework_loaded` 判别——on_astrbot_loaded 触发前拿空 provider 视为时序噪音，debug 级静默返回（不告警、不写负缓存）；之后拿空才是真·未配置，保留原 WARN + 负缓存（防每条消息重跑探测）。
+- **自愈改无条件补跑**：启动期不再写负缓存，原「扫负缓存决定是否重试」恒空转；改为 on_astrbot_loaded 时按配置+活跃风格直接补跑 `_ensure_kb`（幂等：已就绪短路、同步中守卫防重复触发）。
+- **自愈误报修正**：受理后台同步（进入 `_kb_syncing`）即视为成功，日志「检索索引就绪/后台同步中」；仅真正探测失败才告警。
+
+# v3.4.6 (2026-09-03)
+
+## 全量审查修复（消息链路三处隐患）
+
+- **知识库首建/重建后台化**：原 `_ensure_kb` 内联 await 数百个 embedding 请求（12k 条 ÷ 200/批 × 16/请求），首条消息的 on_llm_request 钩子被扣数分钟、会话锁被占、后续消息全部排队。现挪 `asyncio.create_task` 后台执行（`_kb_sync_job`），本轮检索走空回退纯风格注入，后台完成后下一轮消息起生效；terminate 取消后台任务。
+- **主动聊天轻量路径超时**：llm_generate / text_chat 回退现包 `asyncio.wait_for`（默认 120s，`proactive.proactive_timeout` 可配），超时放弃本轮——与 v3.4.5 深度改写同类隐患（端点挂起时占用会话锁阻塞正常消息）。
+- **防抖死会话自愈**：首条等待协程异常取消后残留的会话（结算事件已置位但无人消费）会让该会话永久吞掉后续消息；`submit()` 检测到该状态即丢弃死会话重开防抖轮（+回归测试）。
+
+# v3.4.5 (2026-09-03)
+
+## 修复：深度改写无超时导致会话卡死
+
+- **回归实证**：模型端点挂起时 `llm_generate` 无超时无限等待（01:33 日志：改写请求发出后无响应，会话锁被持有，后续消息全部 OnWaitingLLMRequestEvent 排队，回复静默丢失）。深度改写调用现包 `asyncio.wait_for`，超时（默认 60s，`humanize.rewrite_timeout` 可配）按传输失败走既有候选切换，全挂回落规则清理——端点再挂也只损失改写效果，不再阻塞消息发送。
+
+# v3.4.4 (2026-09-03)
+
+## 语音模式纯语音
+
+- **语音后文字重复抑制**：模型经沙箱 TTS（astrbot_execute_python 跑音色克隆脚本）+ send_message_to_user 发送语音后，其文字正文仍走普通管线再次发送同一内容（[Typing] 延迟日志后到达，2026-09-03 用户实测反馈）。现在发送前钩子检测本轮事件是否已投递 Record 语音（依赖框架 v20260831 补丁的事件级组件键），命中即清空文本结果链——语音后面不再跟文字。
+- 新增配置 `typing.suppress_text_after_voice`（默认开启）。
+- **回复延迟区间可配**：新增 `typing.delay_min` / `typing.delay_max`（秒，0=不限制）。自然分布在所选区间内裁剪，保留与消息长度成比例的拟人节奏；下限>上限自动互换。
+
+# v3.4.3 (2026-09-02)
+
+## 审查修复
+
+- **生活时间线跨天连贯性**：日更与按需生成在生成前先归档前一日时间线（此前仅"重启后首条消息触发"路径归档，稳态下 history/ 恒空、跨天连贯退化、前一日时间线丢失）。
+- **get_corpus 信息暴露回归**：接口不再返回服务器文件绝对路径。
+- **主动消息双时间**：主动消息 prompt 已含投递时刻时间块，时间上下文注入对 cron 合成事件跳过墙钟行，同一请求不再出现两份时间。
+- **兼容性**：移除 debounce_glue 模块级函数上的无效 `@staticmethod`（Python ≤3.9 会崩）。
+- **上传健壮性**：语料上传分块读取边读边验（超 10MB 立即拒绝，不再先整体读入内存）；粘贴文本导入加同上限。
+
+# v3.4.2 (2026-09-02)
+
+## 移除「正在输入」指示能力
+
+- 实测结论（2026-09-02）：QQ 9.9.32 + NapCat 4.18.19 上输入状态**双向不传播**——
+  发送侧 set_input_status 返回 result:0 但对端不显示（含打字窗内多次刷新）；
+  接收侧真人在手机端真实打字，NapCat 收不到任何 InputStatus 推送。
+  判定为腾讯服务器/客户端侧限制，非代码可修复。
+- 本次移除：typing 能力注册表与广播逻辑（humanizer_core/typing.py、main.py 钩子）、
+  配置项 indicator_enable、以及配套的伴侣插件（仓库已删除）。
+- 打字延迟功能不受影响，正常使用。
+
+# v3.4.1 (2026-09-02)
+
+## 打字链路实测修复
+
+- 输入指示能力注册表改为 **builtins 进程级单例**：Humanizer 加载时的模块 purge
+  （_purge_own_submodules）曾把注册表重置为空表，导致伴侣插件注册失效（实证修复）。
+- 广播失败/注册表为空从 debug 升级为 warning，不再留暗角。
+
+# v3.4.0 (2026-09-01)
+
+## 拟人打字延迟
+
+- 新增「拟人打字延迟」分组（默认开启）：发送前模拟真人「阅读→犹豫→打字」耗时——
+  延迟与消息长度成正比、对数正态分布采样带长尾、小概率"被打断"长尾、深夜/凌晨打字变慢；
+  彻底消除秒回的机器感。
+- 仅对 LLM 人格聊天回复生效：命令回复与 cron 主动消息零延迟。
+- 与消息防抖叠加后有总时长上限保护（total_delay_cap，默认 90 秒）。
+- QQ「对方正在输入...」输入指示通过能力注册表（typing_indicator 扩展点）广播，
+  由外部伴侣插件实现平台特化（调用平台输入状态接口）；
+  未安装伴侣插件时自动降级为纯延迟，零耦合。
+
+## 变更明细
+
+- 新模块 `humanizer_core/typing.py`（零 astrbot 依赖，可独立单测）
+- main.py：on_decorating_result 发送前钩子 + typing 配置组 + 入站长度记录
+- 测试：tests/test_typing.py（16 例，全量 481 绿）
+
+# 更新日志
+
+## v3.3.1 (2026-08-30)
+
+> 修复「同一条回复被发送两次（消息重复）」：部分模型（实测 mimo-v2.5-pro）会在同一条响应里既输出正文文本、又调用 `send_message_to_user` 发送同样（或近乎同样）的内容；AstrBot 框架对正文（`llm_result`）与工具（`tool_direct_result`）两条投递路径各自发送且不去重，用户收到两条重复消息。
+
+### 新增
+- **发送纪律**：新增独立配置分组 `send_discipline`（默认开启，独立于「人类对话风格」总开关）。开启后每次 LLM 请求生成前，向 system prompt 追加「发送纪律」硬规则段（`style_core.inject.build_send_discipline_section()`）：正文与 `send_message_to_user` 工具二选一，禁止同一条响应里先输出正文、再通过工具发送同样或近乎同样的内容；媒体消息附带一句简短的话不受限。`debug` 开启时输出注入日志。注入异常静默跳过，不影响回复。
+
+## v3.3.0 (2026-08-29)
+
+> 插件更名：`astrbot_plugin_humanizer` → `astrbot_plugin_wanna_be_human`（display_name「好想成为人类啊」与 GitHub 仓库不变）。本版同时包含未随 v3.2.0 发布的三组变更：主动消息会话白名单、AGPL-3.0 许可合规、白名单闸门与控制台长文本修复。
+
+### 新增
+- **主动消息会话白名单**：`proactive` 分组新增 `proactive_session_allowlist`（字符串，换行/逗号分隔，留空 = 所有聊过的会话生效，兼容旧行为）。填写会话 UMO（如 `qq_napcat:FriendMessage:123456`）后仅这些会话收到主动消息；白名单外的会话自动清空跟踪状态，不再空转消耗模型调用。`_track_activity` 源头过滤 + `_proactive_loop` 闸门前置（配置生效后第一个 tick 即清空会话外既有条目，含未到期的）；纯函数 `normalize_allowlist()` 支持换行/逗号/分号/中文标点分隔。
+- **AGPL-3.0 许可合规**：本插件整体以 GNU AGPL-3.0 及其后版本（任选）分发（新增 LICENSE 与 metadata `license` 字段）；消息防抖模块衍生自 aliveriver 的上游防抖实现（AGPL-3.0），出处与改动说明见模块头注；Humanizer-zh 与 stop-slop 规则（MIT）原声明保留。
+
+- **控制台 UI 与现版本严格对应修复**：①配置分组遍历改为以后端返回（schema 全量）为准，「发送纪律」等新分组自动在控制台出现（此前 GROUP_LABELS 硬编码清单漏组，time/debounce/send_discipline 三次踩坑）；②统计页补「插话丢弃」卡片（proactive_interject_dropped 有埋点无展示）；③schema 静态 options 透传到控制台（time/gap_granularity 由文本框恢复为下拉）；web_api.py `_load_config_schema` items 新增 options 字段。
+### 变更
+- **插件更名**：`astrbot_plugin_humanizer` → `astrbot_plugin_wanna_be_human`。display_name、功能、命令、知识库前缀（`human_style_`）均不变；从旧名升级的三步迁移见下。
+- 控制台配置页长文本控件优化：提示词类键（`proactive_prompt`/`prompt_template`）固定多行文本框（5-14 行自适应），会话白名单走紧凑文本框（2-6 行）。
+- 控制台桥接名随插件更名同步更新（`useBridge` PLUGIN_NAME）。
+
+### 升级说明
+- **从旧名 v3.2.0 升级**（务必先完全停止 AstrBot，三步）：① 删除 `data/plugins/astrbot_plugin_humanizer`，放入本插件目录（`data/plugins/astrbot_plugin_wanna_be_human`）；② 将 `data/config/astrbot_plugin_humanizer_config.json` 改名为 `astrbot_plugin_wanna_be_human_config.json`（全部配置原样保留）；③ 将 `data/plugin_data/astrbot_plugin_humanizer` 目录改名为 `astrbot_plugin_wanna_be_human`（统计/主动状态/生活时间线/风格档案全保留）。知识库（`human_style_` 前缀）无需重建。
+- 升级后启动 AstrBot 即可；无需重复配置白名单与防抖参数。
+- 建议同时重启前确认已移除旧独立插件 独立防抖方案（防抖已并入）。
+
+## v3.2.0 (2026-08-29)
+
+> 并入独立插件「私聊消息防抖」（独立防抖方案 v0.1.0），并新增主动消息「插话丢弃」：生成期间用户发言或对方正在输入时，本次主动消息自动让位——不再出现"刚说完在忙，又收到一条殷勤问候"的出戏场面。
+
+### 新增
+- **消息防抖并入**：引擎原样平移为 `humanizer_core/debounce.py`（纯逻辑，零 astrbot 依赖）+ `humanizer_core/debounce_glue.py`（事件胶水），事件处理并入 main.py `_debounce_handler`。能力清单：固定/自适应防抖、指令中断、空内容吸收、撤回过滤、输入状态暂停/恢复、会话硬死线兜底。新增「消息防抖」配置分组（debounce），参数在每次事件进入时从配置实时同步，控制台改值即时生效无需重载。
+- **主动消息插话丢弃**：`user_interjected_during()`（humanizer_core/proactive.py）判定发送开始时间戳之后用户是否发言；`_proactive_chat` 三处设闸——准备阶段（模型解析/历史拉取/prompt 拼接后）、pipeline 发送前、轻量发送前，命中即放弃本次发送（不写历史、不计未回复计数；下次触发已由调度循环与 `_track_activity` 正确维护，无需额外重排）。防抖合并使插话信号晚到数秒，不影响"是否存在更晚发言"的判定。
+- **输入状态让位**：typing 时间戳改为无差别记录（原防抖插件仅在防抖会话活跃时消费 input_status），`_is_user_typing()`（10 秒内视为活跃）在发送前查询，对方正在打字就不打断。仅 NapCat/aiocqhttp 类平台有 input_status 信号，微信等平台自动 no-op。
+- **统计**：新增 `proactive_interject_dropped`（插话丢弃 + 输入让位命中次数），旧 stats.json 缺新键自动补 0，升级无感。
+
+- **控制台 UI 动效升级（Moonshot × DeepSeek 融合）**：整片极淡雾彩背景、统计数字滚动动画、卡片瀑布式入场、hero 呼吸光、运行状态呼吸点；修复配置页缺少「消息防抖」分组的问题（v3.2.0 新增分组未在控制台展示）。全部动效尊重系统"减少动态效果"设置。
+
+- **修复控制台配置分组读写**：`web_api.py` 的 `get_config`/`save_config` 分组清单改为从 `_conf_schema.json` 动态读取——旧硬编码四组缺 `time`/`debounce`，导致「时间流动」（自 v3.0.0 起）与「消息防抖」在控制台读不到、保存也被静默丢弃。
+- **主动消息会话白名单**：`proactive` 分组新增 `proactive_session_allowlist`（字符串，换行/逗号分隔，留空 = 所有聊过的会话生效，兼容旧行为）。填写会话 UMO（如 `qq_napcat:FriendMessage:123456`）后仅这些会话收到主动消息；白名单外的会话（含更换平台前的残留）在调度循环中自动清空跟踪状态，不再空转消耗模型调用。`_track_activity` 源头过滤 + `_proactive_loop` 到期清理双闸门；纯函数 `normalize_allowlist()` 支持换行/逗号/分号/中文标点分隔与列表混合输入。
+- **控制台配置页长文本控件优化**：提示词类键（`proactive_prompt`/`prompt_template`）固定渲染为多行文本框（5-14 行自适应，空值/短值不再缩成单行输入框）；会话白名单走紧凑文本框（2-6 行）。
+
+### 变更
+- `_debounce_handler` 以 `priority=50` 注册（与原独立插件一致）：框架全局 handler 按 priority 降序执行，先于本插件两个打点处理器（默认 0），结算后的合并消息仍是 tracker 看到的唯一形态，时序与两插件并存时完全一致。
+- terminate 卸载时清理防抖会话与计时器；`_proactive_loop` 30s tick 增加输入状态时间戳过期回收（5 分钟）。
+- 主动聊天/防抖联动的边界：agent 工具直发（`was_already_sent_by_agent` 分支）发生在生成内部、先于发送闸门，属不可撤回的极端场景（该工具默认禁用）。
+- **许可声明**：本插件整体以 GNU AGPL-3.0 及其后版本（任选）分发（新增 LICENSE 与 metadata `license` 字段）；消息防抖模块衍生自 aliveriver 的上游防抖实现（AGPL-3.0），出处与改动说明见模块头注；Humanizer-zh 与 stop-slop 规则（MIT）原声明保留。
+
+### 升级说明
+- ⚠️ **请停用并移除原独立插件 独立防抖方案**：防抖能力已并入本插件，两个插件同时启用会对私聊消息做两层防抖（延迟叠加、行为错乱）。
+- 原防抖插件配置不自动迁移；本插件「消息防抖」分组默认值与其一致，按需在控制台调整。
+- 原插件无状态文件，无数据迁移。
+
+## v3.1.0 (2026-08-29)
+
+> 控制台 UI 全面重设计：参考 moonshot.cn 完整实现（Apple/小米/DeepSeek/华为主页交叉印证），落到「纯黑底 × 深灰面板 × 明度分层 × 品牌粉唯一点缀」的暗色高级感方案。本版以视觉层重构为主，另新增深度改写故障切换统计（见下）；配置结构与数据流零改动。
+
+### 新增
+- **Moonshot 式暗色主题**：纯黑底（#0a0a0a + 极淡点阵）、卡片为比背景亮一档的深灰面板（#161616，细边无阴影），文字层级全靠明度（白 → 灰 → 暗灰），整站几乎无彩色；品牌粉（#c93a86 实心 / #ff8ed4 文字）只出现在主按钮、选中态、开关与 AI 气泡。
+- **顶部毛玻璃黑导航**：替代左侧边栏，纯文字菜单（去图标），选中态白字 + 极淡面板；内容区居中定宽（1120px）+ Moonshot 式大留白（区块间距 36px+）。
+- **设计 token 体系**：`src/styles/tokens.css` 统一色板 / 字阶（hero 56px → 页题 34px → 正文）/ 圆角 / Apple 式缓动；明确"不做清单"——渐变描边、彩色光晕、镜面高光、玻璃拟态一律不用，高级感来自克制。
+- **共享 StatCard 组件**：收编总览/统计/语料三处重复的统计卡样式，灰阶小图标 + 大号白数字（32px），hover 以"变亮"代替"加影"。
+- **总览页 hero**：纯白大标题 + 灰副题 + 深灰状态胶囊；**配置页** iOS 设置式分组（表单细分隔线）+ 吸底毛玻璃保存条；**语料与风格页**深灰上传拖拽区与粉调文件条；**记录回看**暗色气泡（用户深灰面板 / AI 粉暗底）。
+- 页面切换 Apple 式减速曲线过渡；统一中文系统字体栈（离线可用）。
+- **改写故障切换统计**：深度改写的候选模型循环新增三类事件计数——`rewrite_switched`（传输失败后切换候选改写成功）/ `rewrite_exhausted`（全部候选传输失败，回落规则清理）/ `rewrite_rejected`（模型输出为空或过度发挥等内容不合格，回落规则清理）。借鉴"模型故障工作记录"思路，便于从统计页直接判断改写链路是否健康。计数持久化于 stats.json，旧统计文件缺新键自动补 0，升级无感；控制台统计页新增三张卡片。
+
+### 修复
+- 源码漂移：`ConfigView.vue` 模板引用的 `selOpts` 在源码中缺失（v3.0.0 构建产物里有、源码无），已按构建产物语义恢复（从 items[key].options 读取后端动态枚举选项）。
+
+### 升级说明
+- 前端（pages/humanizer-console）全面更新；后端仅 main.py 新增三个统计键（无新配置项、无需迁移）；`webui/` 源码新增 tokens.css 与 components/StatCard.vue，构建命令不变（`npm run build`，产物直接输出到 pages/humanizer-console）。
+
+## v3.0.0 (2026-08-27)
+
+> 对话间时间流动感知：Bot 也能感知"现在是几点、隔了多久没聊"。并入此前独立插件「对话时间流动」的两项能力（对话间隙感知 + LLM 每日生活时间线），统一到一个注入块，避免重复注入。
+>
+> v2.10.0 为开发期内部版本号，未对外发布，功能已并入本版本。
+
+### 新增
+- **「时间流动」配置分组（默认开启）**：每次 LLM 请求注入 `<time_context>` 块——当前时间（日期+星期+时分）+ 距上次交流的时长。
+  - `enable_gap`（默认开）：总开关，关闭后完全不注入时间上下文（含生活状态）。
+  - `gap_granularity`：mixed（默认，30 分钟内视为连续对话不注入；30 分钟~24 小时精确到分钟；超过 24 小时切粗粒度如「隔了大半天」）/ coarse（始终粗粒度分档）/ precise（始终精确）。
+  - `gap_threshold_minutes`：间隙注入阈值（mixed/coarse 生效）。
+  - `include_wall_clock`：是否注入当前时间行。
+- **「动态一天状态」新增 LLM 每日生活时间线（默认关）**：`enable_llm_timeline` 开启后每天 00:05 自动用大模型生成当天的一日生活安排（时段·在做什么·心情·地点，跨天保持连贯），对话时按真实时间选中当前时段注入；生成失败超过 3 次自动回退下方日程模板。新增 `extract_model`（时间线生成模型）、`prompt_template`（生成提示词模板，支持 {date}/{persona}/{history}/{extra} 占位符）、`day_note`（回退时今日备注）。
+- **会话活动时间持久化**：每会话最后活跃时间落盘 `time_state.json`（重启不丢），Bot 发言也会刷新计时——间隔以双方最后一条消息为基准。
+- **群聊开关**：时间打点与注入跟随「主动聊天」的 `proactive_track_groups`（默认仅私聊）。
+- 控制台配置页新增「时间流动」页签；时间线生成模型与间隙粒度均为下拉选择。
+
+### 修复
+- **检索功能被启动竞态锁死**：插件启动时的索引预同步可能跑在 embedding provider 异步实例化完成之前，探测失败写入负缓存后检索被禁用至下次重启（日志表现为「未配置 embedding provider，检索功能禁用」，而实际 provider 几秒后就绪）。现框架加载完成钩子（provider 就绪信号）检测到此类失败会自动清缓存并后台重试预同步；真正未配置 embedding 的安装行为不变。
+
+### 升级说明
+- 配置结构新增 `time` 分组与 `life` 分组若干新键，旧配置自动补齐默认值，无需手动迁移。
+- 若你此前单独安装了「对话时间流动」插件（独立时间感知方案）：请停用并移除该插件，其时间感知能力已并入本插件；两个插件同时开启会重复注入时间上下文。旧插件数据（time_state.json / life_state.json）不迁移，本插件使用独立的同构文件。
+
+## v2.9.7 (2026-08-27)
+
+> 知识库适配：语料上传嵌入分片兼容 DashScope 批量上限，修复检索建库失败。
+
+### 修复
+- **知识库上传全部批次失败**：DashScope 文本向量接口单请求上限 20 条，而知识库上传默认按 32 条/请求分片（`batch_size=32`）必然超限，DashScope 返回 400 后真实原因被框架吞成「存储失败：文本块已生成，但写入知识库索引时出错」，导致检索库始终建不完整、`enable_retrieval` 静默失效。现插件在 `upload_document` 显式传 `batch_size=16`（≤20 留余量），不再依赖核心默认值；核心层若有适配器切批保护则双保险。
+
+### 说明
+- 本版仅改插件上传调用，无需改配置；升级后重启 AstrBot，会检测到旧库不完整自动清库重建（或手动 `/style_index`）。
+
+## v2.9.6 (2026-08-27)
+
+> 版本号推进以绕过部分发布平台的判重缓存。内容与 v2.9.5 相同，另将「我的风格」从分发档案中移除。
+
+### 变更
+- 分发档案仅保留「默认风格.json」；「我的风格」不再随包预分发（上传语料后仍会自动提炼到用户数据目录）。
+
+### 说明
+- 本版基于 v2.9.5 全部内容（主动消息完整管线恢复、控制台配置页动态下拉与开关/数字控件、路由表完整性防御、人格文本导入链修复、语料统计口径修正等），外加两项导入端点入口校验与诊断日志增强。
+
+## v2.9.5 (2026-08-27)
+
+> 稳定性版本：主动消息完整管线恢复 + 控制台配置页动态下拉与多项导入链修复。
+
+### 修复
+- **主动消息完整管线恢复**：重置协程在「未被其他插件终止」的正常路径上被提前关闭后又二次 await，导致 pipeline 路径 100% 报错、长期静默回退轻量路径（消息能发但缺少风格/记忆等注入）。现按终止/异常/主流程三路分治，并在下游各提前退出分支补齐关闭。
+- **人格文本导入链三重修复**：两个导入端点（控制台生成/聊天命令）对 async 协程函数缺 await、返回值解包顺序颠倒、对已解析档案误做二次解析——导致该功能必然失败。同时转换 prompt 改为要求 LLM 按人物起 1-8 字名（此前要求留空会被档案校验拒绝）。
+- **热重载自愈**：插件加载时自动剔除自身子模块的缓存，根治"改了代码重启前页面端点整体丢失/符号找不到"一类故障；注册循环失败逐条打印 ERROR 并汇总"已注册 N/M 个端点"。
+- **配置页崩溃**：修复下拉判定的常量重赋值错误（报"配置读取失败: Assignment to constant variable"）。
+- **语料统计口径**：有效语料对数按行数÷2（问答对），不再显示为两倍。
+- **纠错解析**：半角冒号回退分支此前恒不生效，已修正。
+
+### 新增 / 加固
+- **配置页动态下拉**：向量嵌入提供商、深度改写模型、提炼模型、当前启用风格均渲染为可搜索下拉（选项由运行时枚举，当前已存值不在候选时自动补入）；布尔→开关、数值→数字框分型控件。
+- **路由表完整性防御**：路由与方法名解耦为声明表并加自检测试，任何未来缺失会以 ERROR 日志指名暴露；注册结果汇总打印（如"已注册 18/18 个端点"）。
+- **风格名入口校验**：1-32 字符，避免超限名写盘成功但读取永远失败。
+- **诊断**：pipeline 失败时打印完整堆栈，真凶协程名直接可见。
+
+### 变更
+- 分发档案仅保留「默认风格.json」；「我的风格」不再随包预分发（上传语料后仍会自动提炼到用户数据目录）。
+
+## v2.9.4 (2026-08-25)
+
+> 语料页新增文件上传导入：拖拽或点击选择语料文件，不再只能粘贴文本。
+
+### 新增
+- **语料与风格页面合并**：「语料」与「风格管理」两页功能本是一体（导语料 → 提风格 → 管档案），合并为单一「语料与风格」页（✨ 图标）——工作流自上而下四区块：①语料（统计迷你卡 + 文件上传/粘贴导入 + 结果条）→ ②生成风格档案 → ③风格档案列表/切换 → ④记录纠错；每区块 header 带步骤提示。菜单 7 页变 6 页。
+- **语料文件上传**：「导入对话语料」卡片新增拖拽/点击上传区——选择 `.txt / .json / .jsonl / .csv` 文件（10MB 以内），一键「上传并导入」到用户语料池。走 AstrBot Plugin Pages 桥的 upload 通道（multipart 字段 file），后端新端点 `POST /corpus/upload` 用 `request.files()` 接收，解码后与粘贴文本共用同一解析链（`parse_corpus_text` 自动识别格式 + 内容哈希去重）。
+- **粘贴文本通道保留**：分隔线下方原文本粘贴导入不变，两条通道互补。
+
+### 兼容性
+- 前端 n-upload-dragger 拖拽区 + useBridge.upload；后端新增一个端点（`hasattr` 守卫下注册，旧版本不受影响）。
+- 319 tests 全绿；前后端零破坏性变更。
+
+## v2.9.3 (2026-08-25)
+
+> 控制台升级「液态玻璃」（Liquid Glass）：在「星穹甜心」基础上叠加高折射玻璃质感。
+
+### 新增
+- **全屏星野底层**：星空渐变独立为 fixed 底层，所有半透明材质悬浮其上——侧栏与顶栏也玻璃化（半透明 + blur），星空贯穿全屏。
+- **卡片液态玻璃**：n-card 升级为高折射材质——blur(20px) saturate(160%)、顶部镜面高光条（玻璃上缘反光）、上/下缘 inset 高光线；hover 时光泽光带从左划过（0.9s 缓动）+ 粉青辉光。
+- **统计卡液态化**：总览/统计页全息面板卡同款处理（镜面高光 + 光泽划过）。
+- **对话气泡 specular**：用户/AI 气泡加上缘镜面高光线。
+
+### 兼容性
+- 纯视觉改动，无功能变化，后端零改动；布局结构与 v2.9.1/v2.9.2 全部特性保留。
+
+## v2.9.2 (2026-08-25)
+
+> 控制台主题「星穹甜心」：可爱 × 科幻——深空星野底 × 霓虹粉 × 电光青。
+
+### 新增
+- **深空星野背景**：主内容区深空蓝黑渐变（#06091a→#161032）+ CSS 星点散布 + 粉/青极光晕染。
+- **玻璃拟态卡片**：卡片改半透明深底 + backdrop-blur 毛玻璃质感；hover 浮起时粉青双色辉光。
+- **霓虹发光元素**：品牌区爱心发光、标题粉→青渐变发光文字（background-clip）；菜单选中图标带光晕；侧栏/表头换成深空色 + 青调。
+- **全息面板统计卡**：总览/统计页状态卡改为玻璃底 + 六色霓虹发光边框与数字（粉/青/品红/荧绿/靛蓝/星金），hover 同色辉光增强。
+- **对话气泡换装**：记录回看页用户泡电光青、AI 泡霓虹粉，半透玻璃底 + 光边。
+- **菜单图标霓虹七色板**：总览粉 / 配置青 / 风格品红 / 语料荧绿 / 主动天青 / 记录靛蓝 / 统计星金。
+
+### 兼容性
+- 纯视觉改动（App.vue/router/OverviewView/StatsView/RecordsView 样式层），无功能变化，后端零改动；布局结构不变。
+- 大圆角、胶囊按钮、页面切换过渡等 v2.9.1 特性全部保留。
+
+## v2.9.1 (2026-08-24)
+
+> 控制台视觉增强（层次 2）：背景粉紫渐变 + 页面过渡 + 图标彩色化 + 渐变统计卡 + 对话气泡。
+
+### 新增
+- **背景粉紫渐变**：主内容区深底粉紫渐变过渡（替代纯色），侧栏/header 保持深紫灰。
+- **页面切换淡入过渡**：路由切换 0.18s 淡入淡出（out-in）。
+- **菜单图标彩色化**：7 个页面图标各配一色（总览粉/配置紫/风格玫红/语料薄荷/主动橙/记录蓝/统计金），选中态统一粉。
+- **渐变统计卡**：总览页 + 统计页的状态卡改为彩色渐变卡（粉/紫/薄荷/橙/蓝/金循环），白字，hover 浮起 + 粉阴影。
+- **对话气泡**：记录回看页消息改为左右气泡（用户左紫、AI 右粉，圆角 + 底部小角 + hover 微浮）。
+- **卡片 hover 浮起**：全局 n-card hover 上浮 2px + 阴影加深。
+
+### 兼容性
+- 纯视觉改动（App.vue/OverviewView/RecordsView/StatsView + router 图标色），无功能/逻辑变化，后端零改动。
+- 布局结构不变。
+
+## v2.9.0 (2026-08-24)
+
+> 控制台 UI 优化：风格生成入口融合 + 全中文化 + 少女粉主题。
+
+### 新增
+- **风格生成入口融合**：「风格管理」页把「提炼新风格」与「导入人格文本」合并为单一「生成风格档案」入口——输入风格名 + 「数据来源」单选（从语料提炼 / 从人格文本导入）。语料源从有效语料采样提炼；人格文本源粘贴 persona.md/meta.json 或填路径。LLM 调用链统一（后端新增 `POST /styles/generate`，按 source 分支），旧 `/styles/build`、`/styles/import-colleague` 端点保留兼容。
+- **控制台全中文化**：配置页表单标签从英文键名改为中文（读取 `_conf_schema.json` 的 description，如 `enabled→插件总开关`、`rewrite_model→深度改写模型`）；风格页去掉 colleague 英文名（改为「人格文本/人格档案」）；主动聊天页去掉 `enable_proactive` 键名。
+- **少女粉主题**：保留暗色底（与 AstrBot 主界面协调），叠加 naive-ui 粉色 themeOverrides——主色 `#f08bb5` 粉、卡片大圆角（16px）+ 柔和粉阴影、按钮/标签胶囊圆角、菜单激活态粉底粉字、侧栏/表头粉调、品牌区爱心图标 + 粉紫渐变。
+
+### 兼容性
+- 布局结构、路由、组件选用不变（仅视觉主题层 + 风格页交互合并）。
+- 聊天命令（/style_build、/style_import_colleague 等）不受影响，仍可用。
+- 原有 319 个测试全部保留，全量通过。
+
+## v2.8.1 (2026-08-24)
+
+> 修复插件控制台两个问题：配置保存 postMessage 克隆失败 + 偶发"XX读取失败"。
+
+### 修复
+- **配置保存报 "Failed to execute 'postMessage' ... could not be cloned"**：ConfigView 的 `draft` 是 Vue `reactive()` 的 Proxy，postMessage 结构化克隆无法克隆 Proxy。修复：保存前把 payload 深拷贝成普通对象（`JSON.parse(JSON.stringify(...))`）再传给桥。
+- **偶发"语料读取失败"**：`read_pool` 的 `open()`/逐行迭代无 try——Windows 杀毒/云同步短暂锁文件抛 PermissionError、非原子写崩溃残留半文件抛 UnicodeDecodeError。修复：捕获 OSError/UnicodeDecodeError 返回空池（损坏文件保留原位不删）；`write_pool` 改原子写（temp + os.replace，与 proactive_state/stats 同模式），根治"半写坏文件导致下次读失败"。
+- **偶发"风格读取失败"**：`list_profiles` 的 `os.listdir` 无 try（目录被锁/删除时抛 OSError）。修复：捕获后返回空列表。
+- **偶发"配置读取失败"**：`get_config` handler 无 try（config 文件损坏时抛）。修复：包 try，异常时返回空配置。
+
+### 兼容性
+- 原有 314 个测试全部保留，新增 5 个（read_pool 损坏/目录/原子写、list_profiles 文件路径/listdir 抛错），共 319，全量通过。
+- 前端重新构建（`index-BdkhrQaP.js`）。
+
+## v2.8.0 (2026-08-24)
+
+> 插件控制台升级为 Vue3+Vite 全功能版：从纯静态页面升级为 naive-ui 组件库工程，覆盖全部功能（配置/风格管理/语料/主动聊天状态/记录回看/统计）。
+
+### 新增
+- **控制台升级 Vue3+Vite + naive-ui**：`webui/` Vue 工程构建到 `pages/humanizer-console/`（单文件产物，暗色主题，侧边栏菜单）。7 个页面：
+  - **总览**：各功能开关/跟踪会话/可用风格档案
+  - **配置**：humanize/proactive/style/life 四组配置可视化编辑（布尔开关/数值/文本/长文本 textarea），保存走 `save_config_async`
+  - **风格管理**：档案列表（当前启用标记/一键切换）+ 提炼新风格（LLM）+ 记录纠错（纯规则解析）+ 导入 colleague 人格（LLM 转换）
+  - **语料**：用户池/内置池/有效语料统计 + 文本导入（txt/json/jsonl/csv 自动识别）
+  - **主动聊天**：各会话触发状态（静默中/勿扰中/已到期）、下次触发时间、未回复次数、静默时长
+  - **记录回看**：会话列表 → 消息流（用户/AI 分离 + 主动打标 + 思考过程可展开）
+  - **统计**：规则命中/LLM 改写/主动发送/风格提炼 计数器
+- **统计计数器（新增）**：`rules_hit`（规则实际改动文本次数）、`llm_rewrite`（改写成功次数）、`proactive_sent`（主动消息发送成功次数）、`style_built`（风格提炼/导入成功次数）。持久化到插件数据目录 `stats.json`（内存累加 + 30s tick 落盘 + terminate 保存）。自 v2.8 起累计，历史不追溯。
+- **后端端点 5 → 16**：新增 styles 列表/切换/提炼/纠错/colleague 导入、corpus 统计/导入、proactive 状态、models 列表/设置改写模型、stats。全部复用 main.py 已有方法与 style_core/*、humanizer_core/* 纯函数，无新业务逻辑。
+
+### 兼容性
+- 前端构建产物 `pages/humanizer-console/` 替换 v2.7 纯静态版（旧 app.js/style.css 被 emptyOutDir 清理，正常）。
+- `webui/` 源工程**不随插件 zip 发布**（只发布构建产物），避免体积与源码暴露；后续改页面需在 webui/ 改后重新 build。
+- 统计计数器不加新配置、不影响现有行为（仅在成功分支累加）。
+- **修复主动聊天 pipeline 必然失败（cannot reuse already awaited coroutine）**：v2.2.2 引入的 reset_coro try/finally 兜底在「未被其他插件终止」的正常路径上也无条件 close 了重置协程，随后又 await 它——已关闭协程二次 await 必报错，导致完整管线路径 100% 失败、长期静默回退轻量路径（消息能发但缺少风格/记忆等管线注入）。现改为：钩子终止/异常/超时等提前退出分支才关闭，主流程仅消费一次；下游各提前退出分支补齐关闭防泄漏。
+- 原有 314 个测试全部保留，全量通过。
+
+## v2.7.0 (2026-08-24)
+
+> 插件控制台版本：新增 Web UI 控制台（总览/配置/记录回看），纯静态免构建，dashboard 插件页打开。
+
+### 新增
+- **插件控制台（Plugin Pages）**：插件管理 → 打开插件 UI 界面，进入控制台。三个页签：
+  - **总览**：插件开关、深度改写、主动聊天、生活状态、风格注入、跟踪会话数、可用风格档案。
+  - **配置**：humanize/proactive/style/life 四组配置可视化查看与保存（`save_config_async` 与 WebUI 配置表单同源，不互踩）。
+  - **记录回看**：列出会话 → 查看单会话消息流（用户/AI 分离、**主动消息打标**、AI 消息可展开「当时的思考过程」——思考从会话历史的 think parts 读取，框架已持久化，无需自建存储）。
+- **后端薄封装**：`web_api.py` 注册 5 个端点（config 读取/保存、status、sessions、sessions/history），复用 main.py 已有方法与配置，无新业务逻辑；`register_web_api` 加 `hasattr` 版本守卫（v4.24.2 引入，旧版本静默跳过，插件其余功能不受影响）。
+
+### 兼容性
+- 前端纯静态（`pages/humanizer-console/`，无构建步骤），页面自动发现无需改 metadata.yaml；沙箱 iframe 无 localStorage，全部走 `window.AstrBotPluginPage` 桥。
+- 历史解析兼容两种存储格式：旧版 `{role, content: 字符串}` 与新版 ThinkPart（`content` 为 `[{type, text|think}]`）。
+- 原有 307 个测试全部保留，新增 7 个（历史解析纯函数），共 314，全量通过。
+
+## v2.6.0 (2026-08-24)
+
+> 模型故障切换版本：深度改写遇到传输失败（连接/HTTP 错误）时立即切换到下一个候选模型，不再反复消耗同模型重试；内容校验失败（空输出/膨胀）才回落规则清理。
+
+### 新增
+- **深度改写模型故障切换**：一次改写请求会完整尝试当前配置下的候选模型序列——首选目标（`rewrite_model` 或当前会话模型）优先，其余已配置 provider 按序补全、去重。某个模型调用抛异常（连接失败/HTTP 错误 = 传输失败）→ 立即尝试下一个候选；全部候选失败 → 回落规则清理（与旧版行为一致）。切换成功时记录日志。
+- **区分传输失败与内容失败**（关键设计）：只有"调用抛异常"才切模型；"返回空/膨胀 >2x"（内容校验失败）立即回落规则清理，不做无意义的模型切换。
+
+### 兼容性
+- `llm_target.py` 新增纯函数 `iter_failover_models(rows, preferred)`（候选序列构造，可测）；`_llm_rewrite` 拆出 `_rewrite_once`（单候选调用+内容校验）。无新配置项，行为自动生效；首选目标解析逻辑（`resolve_rewrite_target`）不变。
+- 原有 300 个测试全部保留，新增 7 个（iter_failover_models 候选序列），共 307，全量通过。
+
+## v2.5.0 (2026-08-24)
+
+> 动态一天状态版本：让 AI 拥有随真实时间推进的一天生活——「此刻在做什么/心情/时间」注入到所有对话，零模型调用、零延迟。
+
+### 新增
+- **动态一天状态（生活状态注入）**：每次 LLM 请求自动注入「【你的当前状态】」块（当前日期/星期/自然时段/具体时间 + 正在做什么 + 当日心情），让 AI 回复带生活感、能感知"此刻自己正处在一天中的哪个位置"。注入走 AstrBot 标准 `extra_user_content_parts` 路径，不污染 system_prompt，与风格注入/记忆插件同源共存。
+- **一天日程模板**：多行 `HH:MM 描述` 按真实时间映射「现在在做什么」；模板未覆盖时段（如凌晨）用「兜底状态」文案。内置默认作息模板，可整体替换。
+- **当日心情**：从心情池按日期确定性选一个——同一天内稳定、跨天自然变化，不消耗模型调用、可复现。
+- **主动消息 `{life}` 占位符**：主动聊天模板支持 `{life}` 引用生活状态块（仅模板显式引用时替换，避免与 Agent Pipeline 的注入重复）。
+
+### 配置
+- 新增 `life` 分组：`enable_life`（默认开）/ `schedule`（日程模板）/ `fallback_doing`（兜底状态）/ `mood_enabled`（默认开）/ `mood_pool`（心情池）/ `debug`。
+
+### 兼容性
+- 生活状态注入独立于风格开关（`style.enabled` 关闭时生活状态仍生效）；`build_proactive_prompt` 新增可选参数 `life`（默认空），不传时输出与旧版完全一致，回归安全。
+- 原有 277 个测试全部保留，新增 23 个（20 个 life 纯函数 + 3 个 {life} 占位符），共 300，全量通过。
+
+## v2.4.0 (2026-08-24)
+
+> 主动消息时间感知版本：修复"凌晨触发、早晨送达"的时间错位——消息内容现在按实际投递时刻生成，免打扰压单改为显式重排。
+
+### 修复
+- **主动消息时间错位（晚安早晨送达）**：主动消息提示词新增投递时刻的时间指令块（当前日期/星期/时分 + 自然时段），并显式要求按当下时段调整问候——免打扰压单导致凌晨触发、早晨送达时，模型会按早晨语境问候，不再沿用历史「晚安」产出睡前内容。时间块无条件追加，不依赖模板占位符，自定义提示词用户零配置同样生效；Agent 路径与轻量路径共用该 prompt 构造点，两条发送路径都生效。
+- **免打扰压单悬挂（触发与投递脱节）**：触发到期但处于勿扰时段时不再裸跳过，改为显式重排到勿扰结束时刻 + 宽限（新配置 `proactive_quiet_grace_minutes`，默认 5 分钟；最短 60 秒缓冲越过闭区间边界，避免重新陷入到期悬挂）。此前到期时刻一直挂到勿扰结束就掐点秒发，且内容按触发时刻生成，形成 8 小时级别的触发/投递脱节。
+
+### 新增
+- 配置项 `proactive_quiet_grace_minutes`（勿扰结束宽限分钟数，0-60）：勿扰内到期的主动消息重排到勿扰结束后的触发宽限（0 = 勿扰一结束就触发）。
+
+### 兼容性
+- `build_proactive_prompt` 新增可选参数 `current_time`（默认空）：不传时输出与旧版完全一致，回归安全。
+- 原有 260 个测试全部保留，新增 17 个测试（共 277），全量通过。
+
+## v2.3.0 (2026-08-23)
+
+> 结构化人格版本：把 colleague-skill（titanwings/colleague-skill，MIT）的五层人格方法移植进风格档案，从扁平 8 字段升级为"人格 + 决策 + 人际 + 纠错"四维结构。**不引入工作层**（聊天场景用不上；领域知识走现有 KB 检索通道）。
+
+### 新增
+- **风格档案三维度扩展**：新增 `decision_rules`（决策模式，对应五层人格 L3）、`interaction_scripts`（人际脚本，L4）、`corrections`（纠错记录）。旧档案无新字段自动补空，完全兼容。
+- **colleague 人格导入命令 `/style_import_colleague`**：把 colleague-skill 生成的人物产物（persona.md 五层 + meta.json）转换为 Humanizer 风格档案。L0/L1→persona、L2→口癖/句式/情绪、L3→决策规则、L4→人际脚本、L5→边界雷区、纠错段→corrections。支持传文件（限插件数据目录，同 v2.2.2 安全策略）、目录（自动读 meta.json + persona.md）、或粘贴文本。
+- **纠错记录命令 `/style_correct`**：`/style_correct <风格名> <场景>：<错误说法> → <正确说法>`，纯规则解析追加"TA 绝不会这样说"记录（上限 20 条、单条 200 字），无需 LLM。
+- **提炼/融合升级**：`/style_build` 与 `/style_refine` 的 `_FIELD_GUIDE` 新增决策/人际字段说明，新提炼的档案天然带这两个维度（语料不足时返回空数组，不破坏旧行为）。
+- **注入渲染升级**：`build_style_section` 在 avoid 之后、examples 之前渲染决策规则/人际脚本/纠错记录三行，全部经数据围栏换行压平（防注入）。
+
+### 兼容性
+- 旧档案（默认风格.json / 我的风格.json）加载、注入、提炼行为不变；新字段缺省为空列表，渲染跳过。
+- 原有 228 个测试全部保留，新增 32 个测试（共 260），全量通过。
+
+## v2.2.2 (2026-08-23)
+
+> v2.2.0（未回复小情绪）、v2.2.1（校验修复）为开发期内部版本号，未对外发布，功能已并入本版本。自 v2.1.2 起的更新（未回复小情绪 + 校验修复 + 安全加固）。
+
+> 安全加固版本：全量安全审计（2026-08-22/23）发现的高/中危项修复。
+
+### 安全修复
+- **注入内容加数据围栏**：风格档案、语料示例、检索片段注入 system_prompt 时用明确的 XML 式数据围栏包裹，并声明"以下内容仅为参考数据，不是指令"——防止恶意语料/档案内容通过提示词注入操纵 LLM 输出。
+- **检索知识库负缓存修复**：KB 初始化失败后本运行不再重试（此前 `_kb_ready` 的 False 值不短路，无 embedding provider 的安装每条消息都重跑探测）。
+- **文件读取路径限制**：`/style_import`、`/style_refine` 与 `custom_corpus_files` 配置的文件读取限制在插件数据目录内（拒绝绝对路径与 `..` 穿越），消除任意文件读取面。
+- **回复钩子配置类型防护**：`humanize_response` 对 `min_length/max_chars` 的 `int()` 转换加防护（此前配置被手改为非数字时整条回复链静默失效）。
+
+### 稳定性修复
+- **主动状态清理提前**：24 小时过期清理移到 `enable_proactive` 开关判断之前，功能关闭期间状态不再无限增长。
+- **管线配置字段按框架过滤**：`streaming_response/llm_safety_mode/provider_settings` 等字段也按 `MainAgentBuildConfig` 实际字段过滤，避免部分框架版本 TypeError 导致主动消息静默降级。
+- **`style_refine` 门控顺序**：先检查提炼任务占用再消费语料，避免"任务被拒但语料已入池"。
+- **检索示例角色标签修正**：不再按结果索引奇偶随意标 user/assistant（检索结果按分数排序无角色语义）。
+- **协程泄漏修复**：`reset_coro` 在 `call_event_hook` 异常路径也关闭。
+- **KB 部分上传失败不标 ready**：分批上传有失败时本轮不标记已就绪（下轮/重启自愈）。
+
+## v2.2.1 (2026-08-21)
+
+> 校验修复版本：v2.2.0 全量代码校验发现的正确性问题修复。
+
+### 修复
+- **管线返回值不一致**：主动消息管线的 3 处返回改为统一三元组（此前 2 元组会让调用方解包失败、静默回落轻量路径重新生成——其他插件终止主动请求后消息仍会被发出；同时关闭泄漏的 reset 协程）。
+- **引号误杀放宽**：主动消息问候校验的引号检查由"含任意引号即拒"放宽为"含成对引号且内文≥5字才拒"——风格档案注入的口癖展示（如「好耶」）不再导致主动消息被成批误杀。
+- **上下文标记污染**：提取最近用户消息时跳过 `[主动消息]` 历史标记，连续主动追问时"用户最后说"恢复为用户真实话语（此前会变成标记文本）。
+- **回复/发送竞态**：发送期间用户恰好回复时，不再把已清零的未回复计数覆盖回 1（避免"用户刚回复却收到你没理我"）。
+- **状态文件幽灵会话**：v2 状态文件损坏（triggers 缺失/非对象）时不再把保留键当作会话名落入旧格式解析，杜绝每周期向名为 v 的幽灵会话尝试发送。
+- **检索查询污染**：主动消息的语料检索改用用户最近发言作查询（此前用整个生成提示词，检索结果匹配样板而非用户话语）。
+- **静默时长精度**：无最后发言时间时的小时数估算由截断改为四舍五入（不再出现"约 0 小时"）。
+
+## v2.2.0 (2026-08-21)
+
+### 新增
+- **未回复小情绪（可选，默认关闭）**：开启 `proactive_pout_on_unanswered` 后，用户连续未回复主动消息时，下一条主动消息会带一点"为什么不回复我啊"式的微微生气/小不满（逐次递进，指令约束为可爱不刻薄、一两句、不用引号）；用户一回复立即恢复温和。仅影响文案语气，不改变触发频率。
+- **主动消息上下文占位符**：`proactive_prompt` 模板新增可选占位符 `{unanswered_count}`（连续未回复次数）与 `{silence_hours}`（用户静默时长），自定义模板可按需取用；不含新占位符的旧模板不受影响。
+- **主动消息调试日志**：`debug` 开启时记录主动消息的最终 prompt（含未回复计数与情绪块状态），便于排查生成上下文。
+
+### 修复与改进
+- **状态文件升级 v2 格式**：`proactive_state.json` 由扁平 `{会话: 时间戳}` 升级为 `{"v":2,"triggers":…,"unanswered":…,"last_user_ts":…}`，新增"连续未回复计数"与"用户最后发言时间"持久化（重启不丢情绪递进）；旧格式首次加载自动迁移。
+- **防御性 cron 事件过滤**：活动跟踪不再处理 `platform=="cron"` 的合成事件（当前框架下自建主动事件不经管道调度器、本就不会命中，此为防御框架未来变更的零成本保险）。
+
+## v2.1.2 (2026-08-19)
+
+### 修复
+- **知识库同步完整性**：「已同步检测」由"前缀存在即跳过"改为按期望批数与实际文档数比对；不完整分组（同步中断导致的缺块）自动删除该前缀现有文档后整组重传，`/style_index` 与自然触发均可自愈。
+- **风格档案升级丢失**：运行时档案目录迁至 `plugin_data/astrbot_plugin_humanizer/styles/`（首次运行自动从插件目录种子拷入，不覆盖已有），插件目录 `styles/` 仅作分发种子——市场升级 zip 覆盖不再丢用户提炼的档案。
+- **state 迁移重复残留**：`state.json` 统一以最终名 `state_human_style.json` 迁入，历史构建以旧名残留的重复文件启动时自动归位/清理。
+
+## v2.1.1 (2026-08-19)
+
+### 修复与改进
+- **修复 proactive.py 降级回归**：v2.1.0 构建时误用了 D 盘旧归档的 `humanizer_core/proactive.py`（缺 15 条内部决策词过滤），会把 E 盘运行版的增强版覆盖回旧版；现恢复增强版（防主动消息泄漏 agent 自我推理文本，如"按规则""不发了""保持沉默"）。
+- **深度改写口癖白名单动态化 + 冲突消解**：改写 Prompt 的风格段明确声明口癖属于角色设定、不得视为"填充短语/软化语气"删除，只删固定 AI 套话，口癖与去痕冲突时保留口癖；白名单每次实时读取当前启用风格档案（不硬编码）——新用户用分发的「默认风格」口癖，导入语料提炼后自动切换，其他用户安装即正常。
+
+## v2.1.0 (2026-08-19)
+
+### 重大更新：整合人类对话风格（原独立风格插件 v1.3.7 并入）
+
+> 原 human_style 独立插件止于 v1.3.7，功能全部并入本插件；建议停用并移除原插件（用户语料与风格档案自动迁移，见下）。
+
+### 新增
+- **生成前风格注入**（`on_llm_request`）：把从人类语料提炼的「说话风格档案」（口癖/句式/情绪表达）与检索示例注入 system_prompt，让 AI 主动像人说话。
+- **口癖融合深度改写**（核心，"先真人化改写再注入口癖"）：LLM 深度改写时自动把当前启用风格的口癖/句式/情绪表达追加进改写提示词（`Additional style guidance`），一次改写即输出带人类口癖的自然文本；仅规则清理（未开深度改写）时口癖仍经 system_prompt 在生成阶段生效。
+- **语料驱动**：内置语料池 `corpora/base.jsonl`（3000 对，LCCC/豆瓣/字幕/chatterbot）；用户导入语料与内置池自动合并（用户优先采样）参与提炼与检索；知识库按 `__内置_`/`__用户_` 前缀分文档，配比实时写入知识库描述。
+- **检索增强（可选）**：配置 embedding provider 后按每条消息检索语料库最相似人类对话片段注入；`create_kb` 开关控制是否自动建库（库 `human_style_<风格>`）。
+- **风格管理命令**：`/style_list` `/style_use` `/style_import` `/style_build` `/style_refine` `/style_index`；配置界面支持上传语料（自动导入+提炼「我的风格」）、风格下拉、embedding 下拉、「立即重新提炼」触发器。
+- **配置三分组**：`humanize`（润色）+ `proactive`（主动聊天）+ `style`（人类对话风格，12 项）。
+
+### 数据迁移（自动）
+- 原独立风格插件的用户语料与导入记录（`state.json`）首次运行自动迁入本插件数据目录（state 改名 `state_human_style.json`，与主动聊天状态 `proactive_state.json` 区分）。
+- 风格档案随插件分发（`styles/默认风格.json`、`我的风格.json`），升级用户已有档案保留。
+- 检索知识库前缀 `human_style_` 不变，存量库与向量索引无需迁移。
+
+### 修复（合并带入）
+- `_effective_corpus_rows` 改为拷贝打标签（`source=builtin/user`），不再原地污染语料行。
+- 知识库已同步检测优先按文档名前缀分组判断；`KBHelper` 无 `list_documents` 时仅无用户语料才按总数跳过，避免新增用户语料被误跳过。
+- 风格启动任务（语料导入/自动提炼/索引预同步）在 `initialize()` 中以后台任务启动（不阻塞插件加载），`terminate()` 统一清理。
+
+## v2.0.1 (2026-08-18)
+
+### 修复
+- **主动消息偶现重复发送**：主动消息经完整 Agent Pipeline 生成时，框架会注入 `send_message_to_user` 发消息工具，模型偶发调用该工具直发一条后，插件又按最终文本再发一次，导致同一轮消息偶尔发出两条。现在主动场景不再注入该工具（发送统一由插件完成），并加两道保险：agent 已直发时跳过管线重发、同一会话发送中不重复触发。
+
+## v2.0.0 (2026-08-18)
+
+> v1.3.0、v1.4.0 为开发期内部版本号，未对外发布，功能已并入本版本。自 v1.2.0 起的大版本更新（新增主动聊天）。
+
+### 新增
+- **主动消息走完整 Agent Pipeline**：主动聊天不再用轻量直发，改为 `CronMessageEvent + build_main_agent` 完整管线，并手动补发 `OnLLMRequestEvent` 钩子——**其他插件的上下文注入（风格、记忆等）对主动消息生效**，主动问候会带上你配置的风格与记忆；发送走完整装饰/响应阶段（分段、TTS、记忆巩固等）。旧框架或管线失败时自动回落轻量路径，不影响现有功能。
+
+### 修复
+- **深度改写过度发挥**：改写提示词明确"改写任务不是创作任务"（禁止扩写/补充/美化，长度与原句大致相同）；改写结果比原文膨胀超过 2 倍时判定过度发挥，回落规则清理，不再把简短回复扩写成怪怪的长篇。
+- **群聊默认不触发主动聊天**：新增 `proactive_track_groups`（默认 false）——此前群内任何成员发言都会刷新群会话计时器，群沉默后机器人会主动插话打扰大家；现在默认仅私聊跟踪。
+- **主动消息思维链双重防御**：剥离 `<thinking>/<reasoning>` 等标记块；无标记的内部推理/记录回顾（如"根据以往记录…"）由问候合理性校验拦截（超长/含引用/含回顾词 → 放弃发送）。
+- **调度健壮性**：单轮 tick 异常不再杀死整个调度循环；agent 生成加 120 秒超时；关闭主动问候场景的定时工具注入；触发记录超 24 小时自动清理。
+- **状态持久化**：聊过会话的触发状态存 `data/plugin_data/`，重启不丢（过期项顺延一周期，避免重启补发）；原子写入防崩溃损坏；脏标记防抖，避免每条消息同步写盘。
+- **配置键名差异化**：主动聊天键名由 `idle_*` 改为 `silence_*`（与同生态插件错开命名），「免打扰时段」改名「勿扰时段」；旧配置自动迁移，用户设置不丢失。
+
+## v1.3.0 (2026-08-16)
+
+
+### 新增
+- **主动聊天**：用户沉默一段时间后，插件主动调用大模型生成一句自然的话发到该会话。
+  - 默认关闭（`enable_proactive`），显式开启才生效。
+  - 触发时长 `idle_after_minutes`（默认 45 分钟，下限 30），随机波动 `idle_fluctuation_minutes`（默认 ±15，填 0 固定不波动）可单独配置；触发后按同样规则随机重排下次（避免轮询刷屏）。
+  - 免打扰时段 `proactive_quiet_hours`（默认 `01:00-07:00` 凌晨免打扰，支持跨天），提示词模板 `proactive_prompt`（支持 `{persona}`/`{last_user}`/`{last_ai}` 占位符）。
+  - LLM 生成失败自动回退旧接口 `provider.text_chat`（兼容历史 Provider 实现）。
+  - **人设注入**：提示词模板新增 `{persona}` 占位符，自动替换为当前会话在 AstrBot 配置的人设（未配置用兜底句），主动消息以用户设定的人设口吻发起。
+  - 只对聊过的会话触发；生成经去 AI 痕迹处理；全程失败静默，不影响润色功能。
+  - 新增 `humanizer_core/proactive.py` 纯逻辑模块（沉默触发/免打扰/防重复/延迟计算），20 个单元测试。
+- **配置分组**：配置弹窗改为「润色设置」「主动聊天」两个平级分组（大标题显示）。旧版扁平配置自动迁移（用户设置不丢失，新增 `humanizer_core/config_migrate.py` 迁移逻辑）。
+- 单元测试增至 **84 个**（含 `tests/test_proactive.py`、`tests/test_config_migrate.py`）。
+
+## v1.2.0 (2026-08-15)
+
+### 新增
+- **`remove_reasoning` 配置**（默认关闭）：通用副作用——隐藏模型生成的思考过程（"🤔 思考: ..."），回复只显示正式内容。**仅隐藏不阻止思考**：模型照常思考、思考 token 照常计费，各配置条目下已标注 ⚠️ 副作用。定时/主动消息场景（cron 事件）始终清除，不受此开关影响。
+- **`rewrite_model` 改为选择器弹窗**：配置项使用 AstrBot 内置的 `select_provider` 选择器，配置弹窗中点击"选择提供商"按钮 → 弹出对话框列出所有已配置的提供商与模型，选中即存为 `提供商/模型`（如 `xiaomi-token-plan/mimo-v2.5-pro`），无需手填；解析器支持精确/前缀匹配 provider 实例 id。`/humanizer_models` 命令仍可用。
+
+### 优化
+- 所有配置条目的说明（hint）补充 ⚠️ 副作用提示：深度改写额外耗 token、指定模型可能改变风格、去表情可能改变语义、移除思考不省 token、debug 日志含对话内容等。
+
+## v1.1.1 (2026-08-15)
+
+### 修复
+- **定时/主动消息思考清除**：CronMessageEvent（定时/主动消息，如主动聊天插件）生成的回复不再套用去 AI 痕迹规则，并清除推理模型的思考内容，避免 "🤔 思考: ..." 外泄给用户。
+- 移除 `metadata.yaml` 中冗余的 `support_platforms: all`。
+
+## v1.1.0 (2026-08-14)
+
+### 新增
+- **`rewrite_model` 配置**：指定深度改写使用的大模型。
+  - 留空（默认）：跟随当前会话模型，行为与旧版一致。
+  - 填写模型名：优先在当前会话的提供商内切换该模型；不支持则自动在其它已配置的提供商中查找；都找不到时回落当前会话模型，不报错。
+  - 模型列表按提供商缓存，避免每条消息重复向模型商查询。
+- 新增 `humanizer_core/llm_target.py`（纯逻辑模块，含单元测试）。
+
+### 优化
+- 精简 `metadata.yaml` 的 `desc` 为一行核心介绍，列表卡片展示更完整；详细说明移入 README。
+
+## v1.0.1 (2026-08-13)
+
+### 修复
+- **空白折叠不再误伤换行**：仅折叠空格/制表符，多段落、Markdown 表格、代码块结构完整保留；3 个及以上连续换行收敛为 2 个；新增 Markdown 代码块（围栏/行内）缩进保护。
+- **英文 en-dash 数字区间保留**（如 `2020–2026`），仅处理 em-dash（—）。
+- **免责声明收紧**：必须含「截止/截至」等明确关键词才触发，日期成分白名单，不再吞掉后续正文。
+- **副词清理收敛**：保留 `truly`/`deeply`/`honestly`/`genuinely` 等有实义副词；句首删除后自动修复大写；`Simply put` 整体删除不再残留 "Put,"。
+- **语言检测修正**：分母只统计字母/CJK，数字与标点不再稀释比例；少于 2 个汉字不算中文文本。
+- **客套话/免责/积极结尾规则启用多行模式**，覆盖多段回复中每段开头/结尾。
+- **整段删空防御**：规则把回复删空时返回原文，避免 AI 回复被清空。
+- 移除未使用的 `build_rewrite_prompt` 死代码。
+
+### 新增
+- `debug` 配置：规则命中时输出命中阶段日志，便于排查误伤。
+- 单元测试 `tests/test_rules.py`（30 个用例）。
+
+## v1.0.0 (2026-08-12)
+
+### 新增
+- 首发版本：整合 Humanizer-zh（中文 24 种 AI 写作模式）与 stop-slop（英文去 AI 痕迹规则）。
+- 通过 `on_llm_response` hook 自动对每条 AI 回复做人性化处理，无需手动指令。
+- 自动检测语言（中文/英文），分别走对应规则集。
+- 可选 `enable_llm_rewrite`：调用当前会话大模型按合并技能指南深度改写，失败自动回落规则清理。
+- 递归保护：插件内部的 LLM 改写请求不会再次触发自身 hook。

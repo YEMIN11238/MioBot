@@ -1,0 +1,25 @@
+{
+  "plugin": "astrbot_plugin_dafeiyu_clean",
+  "upstreamAuthor": "zexuan604 / zexuanw958-svg",
+  "sourceRepository": "https://github.com/zexuanw958-svg/dafeiyu-config-pack",
+  "sourceRevisionFromLocalHandoff": "8c01b0361b8a4baff5be3d2bc67ed55108953086",
+  "upstreamVersion": "v0.1.0",
+  "localVersion": "v0.1.1-miobot",
+  "license": "The standalone plugin folder contains no separate LICENSE; the containing configuration pack declares MIT for its own code, persona and settings. Its original LICENSE is retained.",
+  "upstreamFiles": [
+    {
+      "path": "main.py",
+      "sha256": "e9b22c8967ec9cd3061a5f1d83f756077304fb94712edb7c327c34ef73d3cb82"
+    },
+    {
+      "path": "clean.py",
+      "sha256": "a02d679e27cadd6167c73c29b60f970a178f5f023a97d467426790f3a8b8cfa5"
+    },
+    {
+      "path": "metadata.yaml",
+      "sha256": "5fec3a85ba47a4d91c80a677677c8fe26498b33d338af25bd2c66c10755f8af1"
+    }
+  ],
+  "containsCredentials": false,
+  "containsUserHistory": false
+}

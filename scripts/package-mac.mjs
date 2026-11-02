@@ -1,0 +1,31 @@
+import {cpSync,mkdirSync,existsSync,readFileSync,writeFileSync,rmSync} from 'node:fs';
+import {join} from 'node:path';
+import {execFileSync} from 'node:child_process';
+import {packager} from '@electron/packager';
+import {projectRoot} from '../server/index.mjs';
+import {packageCloud} from './package-cloud.mjs';
+import {patchManagedRuntime,NATIVE_POLICY_PATCH} from '../server/assistant-runtime.mjs';
+if(process.platform!=='darwin'||process.arch!=='arm64')throw new Error('This build currently targets macOS arm64 only.');
+const source=join(projectRoot,'.runtime/astrbot-source');
+patchManagedRuntime(source);
+const python=join(source,'.venv/bin/python');
+const home=execFileSync(python,['-c','import sys;print(sys.base_prefix)'],{encoding:'utf8'}).trim();
+const packages=execFileSync(python,['-c','import sysconfig;print(sysconfig.get_paths()["purelib"])'],{encoding:'utf8'}).trim();
+const payload=join(projectRoot,'.runtime/native-runtime');
+const options={recursive:true,verbatimSymlinks:true,filter:path=>!path.includes('__pycache__')&&!path.endsWith('.pyc')};
+mkdirSync(payload,{recursive:true});
+if(!existsSync(join(payload,'python/bin/python3.12')))cpSync(home,join(payload,'python'),options);
+// Refresh every build: a pre-existing OpenAI package must not hide new bundled
+// plugin dependencies (for example LivingMemory's networkx and pytz).
+cpSync(packages,join(payload,'packages'),options);
+mkdirSync(join(payload,'astrbot'),{recursive:true});
+for(const name of ['main.py','runtime_bootstrap.py','pyproject.toml','LICENSE'])cpSync(join(source,name),join(payload,'astrbot',name),options);
+cpSync(join(source,'astrbot'),join(payload,'astrbot/astrbot'),options);
+const dashboard=join(projectRoot,'.data/astrbot/data/dist');
+if(!existsSync(join(dashboard,'index.html')))throw new Error('Start the source runtime once to obtain the pinned dashboard assets before packaging.');
+cpSync(dashboard,join(payload,'astrbot/astrbot/dashboard/dist'),options);
+writeFileSync(join(payload,'SOURCE.json'),JSON.stringify({engine:'AstrBot',version:'4.29.3',revision:'f61a7f42696da6df25dc7a249ec9b8d54ed9da18',repository:'https://github.com/AstrBotDevs/AstrBot',license:'AGPL-3.0-or-later',python:'CPython 3.12.15',platform:'macOS arm64',containsUserData:false,patches:[NATIVE_POLICY_PATCH],bundledPlugins:[{id:'astrbot_plugin_livingmemory',version:'2.8.2',repository:'https://github.com/lxfight-s-Astrbot-Plugins/astrbot_plugin_livingmemory',license:'AGPL-3.0'},{id:'astrbot_plugin_wanna_be_human',version:'4.1.9',integrationRevision:'miobot.1',repository:'https://github.com/SIiOC/astrbot-plugin-humanizer',revision:'38e732119b309164636671cb715c7a43575b68a7',license:'AGPL-3.0'},{id:'astrbot_plugin_dafeiyu_clean',version:'0.1.1-miobot',repository:'https://github.com/zexuanw958-svg/dafeiyu-config-pack',license:'MIT (containing config pack)'},{id:'astrbot_plugin_miobot_games',version:'0.1.0',license:'AGPL-3.0-only (MioBot)'},...['tasks','research','media'].map(name=>({id:'astrbot_plugin_miobot_'+name,license:'AGPL-3.0-only (MioBot)'})),{id:'astrbot_plugin_miobot_proactive',version:'0.1.0',upstream:'https://github.com/Pancakes-Labs/astrbot_plugin_proactive_chat',revision:'635fc18eeb84e3c7b58661425359244552286835',license:'AGPL-3.0'}]},null,2));
+const cloudExport=join(projectRoot,'.runtime/cloud-export');rmSync(cloudExport,{recursive:true,force:true});mkdirSync(cloudExport,{recursive:true});const cloud=packageCloud({build:false});cpSync(cloud.archive,join(cloudExport,cloud.archive.split('/').at(-1)));cpSync(cloud.archive+'.sha256',join(cloudExport,cloud.archive.split('/').at(-1)+'.sha256'));
+console.log('Runtime payload ready.');
+const paths=await packager({dir:projectRoot,name:'MioBot',platform:'darwin',arch:'arm64',out:join(projectRoot,'release'),overwrite:true,asar:true,prune:false,extraResource:[payload,cloudExport],icon:join(projectRoot,'assets/app-icon.icns'),appBundleId:'local.personalagent.desktop',appCategoryType:'public.app-category.productivity',ignore:[/^\/\.data(?:\/|$)/,/^\/\.runtime(?:\/|$)/,/^\/artifacts(?:\/|$)/,/^\/release(?:\/|$)/,/^\/tests(?:\/|$)/,/^\/scripts(?:\/|$)/,/^\/src(?:\/|$)/,/^\/node_modules(?:\/|$)/,/^\/\.git(?:\/|$)/,/^\/.*\.command$/]});
+console.log(JSON.stringify({apps:paths},null,2));

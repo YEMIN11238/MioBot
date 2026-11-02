@@ -1,0 +1,23 @@
+services:
+  miobot:
+    image: miobot-cloud:local
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 30s
+    environment:
+      MIOBOT_DATA: /data
+      MIOBOT_SERVER_NAME: ${MIOBOT_SERVER_NAME:-MioBot 云端}
+    ports:
+      - "127.0.0.1:4318:4318"
+    volumes:
+      - miobot-data:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  miobot-data:

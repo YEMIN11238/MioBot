@@ -1,0 +1,75 @@
+name: astrbot_plugin_wanna_be_human
+desc: 通过人类风格注入、AI痕迹去除与主动续聊，让机器人的交流体感更接近人类。
+help: |
+  插件启用后自动生效：生成前注入人类对话风格（口癖/句式/检索示例），
+  生成后做规则清理去除 AI 写作痕迹（本地规则，无额外模型调用）。
+  风格管理：/style_list 查看、/style_use 切换、/style_build 提炼、/style_import 导入语料、
+  /style_refine 增量融合、/style_index 重建检索索引；也可在配置界面上传语料自动提炼。
+  /style_import_colleague 导入 colleague-skill 人物人格产物，/style_correct 记录纠错。
+  主动聊天：enable_proactive（默认关闭）开启后，用户沉默一段时间自动发消息。
+  动态一天状态：enable_life（默认开启）注入"此刻在做什么/心情/时间"。
+  时间流动感知：当前时间、距上次交流时长、对话节奏、历法、相识天数。
+  情绪惯性：跨消息情绪状态（热度耦合/时间衰减/冷落弧线）。
+  消息防抖、拟人打字延迟、分段连发、发送纪律、复读拦截、撤回/输入状态感知。
+  插件控制台：插件管理 → 打开插件 UI 界面（总览/配置/语料与风格/主动聊天/记录回看/真人感规则/统计）。
+  v4.1.0 功能裁剪：移除 LLM 深度改写与改写模型命令、思考移除开关、应声虫复读；
+  规则清理与全部感知/主动/发送能力保留。
+  v4.1.1：移除承诺簿（8 键 + 3 命令 + commitments.json）；新增时间/情绪/主动三组档位
+  （awareness_mode / emotion_mode / proactive_preset，默认 custom 不覆盖细分开关）；
+  QC/打字延迟/防抖合并观测计数；QQ 输入状态平台闸门；主动消息直发兜底；
+  lang_mirror 短语去重叠；控制台前端源码可构建（webui/，7 页）、新增 package_plugin.py 打包脚本。
+  v4.1.2：对外可见文案统一中性描述（不出现其它插件/项目名称）；控制台档位项改下拉、
+  图标改内置（离线可用）；新增控制台运行时冒烟工具 tools/verify_console.py。
+  v4.1.3：状态出口与总览页展示三组档位（时间/情绪/主动），配置页档位键置顶。
+  v4.1.4：控制台 UI 优化——导航图标、配置页两列网格 + 未保存提示、真人感规则页两列 + 筛选、
+  总览状态卡可点击跳转、暗色细滚动条。
+  v4.1.5：配置页排版重做——设置卡网格（每项自包含：标签/键名/控件）、组内项数徽标、
+  未保存项计数与放弃/保存操作条。
+  v4.1.6：安全卫生——修复开发/测试时框架按 cwd 把 data/cmd_config.json 生成到插件目录的泄漏；
+  tests/conftest.py 自动设置 ASTRBOT_ROOT，新增防泄漏守卫测试，告警文案补充处理指引。
+  v4.1.7：预发布检查修复——状态卡 border-box、统计页 3×3 与提示条间距；清理随包文档中的本机路径。
+  v4.1.8：总览首卡改名「润色去痕」（原「插件总开关」有误导：该值只控制 humanize.enabled，
+  不控制风格/感知/主动），点击可深链到配置页对应分组。
+  v4.1.9：语义一致性修复——custom 档布尔细分开关回读配置、create_kb 关闭后 /style_index
+  仍可手动重建、QC/去痕/风格/生活状态提示与实现对齐、控制台失败态显式降级、
+  主动状态页补暂停原因、主动消息去痕两路径统一。
+  当前配置 6 组 130 键，命令 14 条。
+version: 4.1.9
+author: SIiOC
+repo: https://github.com/SIiOC/astrbot-plugin-humanizer
+license: AGPL-3.0
+display_name: 好想成为人类啊
+short_desc: 自动去除 AI 写作痕迹，让回复更像真人
+astrbot_version: ">=4.5.7,<5"
+# 本插件经 LLM 钩子（on_llm_request / on_llm_response）与通用消息事件工作，
+# 不调用特定平台的私有 API，故声明支持全部适配器（取值须为 ADAPTER_NAME_2_TYPE 的 key）。
+# 平台相关能力（如「对方正在输入」感知）在所选平台不支持时自动静默降级，不影响主功能。
+support_platforms:
+  - aiocqhttp
+  - qq_official
+  - qq_official_webhook
+  - telegram
+  - wecom
+  - wecom_ai_bot
+  - lark
+  - dingtalk
+  - discord
+  - slack
+  - kook
+  - vocechat
+  - weixin_official_account
+  - satori
+  - misskey
+  - line
+  - matrix
+  - weixin_oc
+  - mattermost
+  - webchat
+tags:
+  - humanize
+  - 人性化
+  - AI 去痕
+  - 对话风格
+  - 生活状态
+  - 消息防抖
+  - 插件页面

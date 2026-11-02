@@ -1,0 +1,27 @@
+{
+  "name": "miobot-desktop",
+  "version": "0.5.0",
+  "private": true,
+  "type": "module",
+  "description": "MioBot: a local-first personal assistant desktop, using AstrBot as its agent runtime.",
+  "main": "desktop/main.mjs",
+  "scripts": {
+    "dev": "node server/index.mjs --dev",
+    "build": "vite build",
+    "start": "node server/index.mjs",
+    "desktop": "electron .",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "license": "AGPL-3.0-only",
+  "dependencies": {
+    "lucide-react": "^1.66.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-parallax-tilt": "1.7.349"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "electron": "^45.2.1",
+    "vite": "^8.3.5"
+  }
+}

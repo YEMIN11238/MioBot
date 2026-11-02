@@ -1,0 +1,11 @@
+* text=auto
+*.sh text eol=lf
+*.command text eol=lf
+*.mjs text eol=lf
+*.py text eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.icns binary
+# Preserve upstream bytes recorded by component provenance manifests.
+integrations/** -text
