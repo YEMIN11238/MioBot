@@ -1,5 +1,6 @@
-.miobot-mobile-active,.miobot-mobile-active body,.miobot-mobile-active #root{width:100%;min-width:0;min-height:0;margin:0;overflow:hidden;background:#faf9fd}
-.mio-mobile{--mm-purple:#8363bd;--mm-purple-dark:#674792;--mm-ink:#302343;--mm-muted:#8d809e;--mm-line:#ece5f7;--mm-soft:#f1eafb;box-sizing:border-box;display:flex;flex-direction:column;width:100%;max-width:680px;height:var(--mio-mobile-height,100dvh);min-height:320px;margin:auto;background:#fdfcfe;color:var(--mm-ink);font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;position:relative;isolation:isolate}
+html.miobot-mobile-active,html.miobot-mobile-active body,html.miobot-mobile-active #root{width:100%;height:100%;min-width:0;min-height:0;margin:0;overflow:hidden;overscroll-behavior:none;background:#faf9fd}
+html.miobot-mobile-active body{position:fixed;inset:0}
+.mio-mobile{--mm-purple:#8363bd;--mm-purple-dark:#674792;--mm-ink:#302343;--mm-muted:#8d809e;--mm-line:#ece5f7;--mm-soft:#f1eafb;box-sizing:border-box;display:flex;flex-direction:column;width:100%;max-width:680px;height:var(--mio-mobile-height,100dvh);min-height:0;margin:0 auto;background:#fdfcfe;color:var(--mm-ink);font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;position:fixed;top:var(--mio-mobile-top,0px);left:0;right:0;overflow:hidden;isolation:isolate}
 .mio-mobile *{box-sizing:border-box;min-width:0}
 .mio-mobile button,.mio-mobile input,.mio-mobile textarea,.mio-mobile select{font:inherit;letter-spacing:normal}
 .mio-mobile button{cursor:pointer;-webkit-tap-highlight-color:transparent;color:inherit;border:0;background:none}
@@ -63,6 +64,12 @@
 .mio-mobile .mm-composer textarea{flex:1;width:100%;max-height:112px;min-height:36px;height:36px;padding:5px 0;resize:none;border:0;background:transparent;box-shadow:none;outline:none;font-size:16px;color:var(--mm-ink);line-height:26px}
 .mm-composer textarea::placeholder{color:#a394b6}
 .mio-mobile .mm-send{display:flex;align-items:center;justify-content:center;flex:none;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#b598de,#8c68c2);color:#fff;padding:0}
+.mio-mobile .mm-hide-keyboard{display:none;align-items:center;justify-content:center;flex:none;width:36px;height:40px;padding:0;color:var(--mm-purple)}
+html.miobot-mobile-keyboard .mm-navigation{display:none}
+html.miobot-mobile-keyboard .mm-hide-keyboard{display:flex}
+html.miobot-mobile-keyboard .mm-composer{margin-bottom:8px}
+html.miobot-mobile-keyboard .mm-top{min-height:60px;padding-top:calc(6px + env(safe-area-inset-top,0px));padding-bottom:6px}
+html.miobot-mobile-keyboard .mm-toast{bottom:76px}
 .mm-navigation{display:grid;grid-template-columns:repeat(4,1fr);flex:none;gap:6px;padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px));border-top:1px solid #eee7f7;background:#fff;z-index:2}
 .mio-mobile .mm-navigation button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:56px;padding:5px 4px;color:#806196;border-radius:17px;font-size:11px}
 .mio-mobile .mm-navigation .mm-selected{color:#fff;background:linear-gradient(135deg,#a181d2,#805db4)}

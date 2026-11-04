@@ -8,7 +8,7 @@
 
 一个可自行部署的个人 AI 助手，把聊天、人设、记忆、联网和提醒收进同一个界面。
 
-`0.6.0 · 手机 Web 预览` · `macOS Apple Silicon` · `AGPL-3.0`
+`0.6.1 · 手机 Web 预览` · `macOS Apple Silicon` · `AGPL-3.0`
 
 [功能介绍](#能用它做什么) · [快速开始](#快速开始) · [连接手机](docs/MOBILE.md) · [云端部署](README-cloud.md) · [开发说明](docs/DEVELOPMENT.md) · [开源组件](THIRD_PARTY.md)
 

@@ -1,7 +1,8 @@
-import React,{useCallback,useEffect,useRef,useState} from 'react';
+import React,{useCallback,useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {ArrowUp,Bell,BookOpen,CalendarDays,Check,ChevronDown,ChevronRight,Cloud,History,Inbox,Link2,LoaderCircle,LogOut,MessageCircle,Monitor,MoreHorizontal,Pause,Pencil,Play,Plus,RefreshCw,Settings,ShieldCheck,Smartphone,Square,Trash2,WifiOff,X} from 'lucide-react';
 import {api,clientFetch,newRequestId} from './client-api.mjs';
 import {createConnectionRecovery} from './connection-recovery.mjs';
+import {mountMobileViewport} from './mobile-viewport.mjs';
 import {applyChatStreamEvent,belongsToActiveStream} from './chat-stream.mjs';
 import ChatText,{ReferenceSources} from './ChatText.jsx';
 import {MOBILE_TASK_STATUSES,beijingInput,reminderISO,mobileTime,mobileDate,groupMobileTasks,pendingSubmissionState,clearAcknowledgedDraft,submissionBelongsToBackend} from './mobile-state.mjs';
@@ -14,7 +15,7 @@ function Orb({small=false}){return <span className={'mm-orb'+(small?' mm-orb-sma
 function MobileButton({children,secondary=false,danger=false,...props}){return <button className={'mm-button'+(secondary?' mm-secondary':'')+(danger?' mm-danger':'')} {...props}>{children}</button>;}
 function Sheet({title,children,onClose}){
   const ref=useRef();
-  useEffect(()=>{const previous=document.activeElement,box=ref.current;box?.querySelector('button,input,textarea,select')?.focus();const key=e=>{if(e.key==='Escape')onClose();if(e.key==='Tab'){const nodes=[...box.querySelectorAll('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled),a[href]')].filter(n=>n.getClientRects().length);if(!nodes.length)return;const first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}};document.addEventListener('keydown',key);return()=>{document.removeEventListener('keydown',key);previous?.focus?.();};},[]);
+  useEffect(()=>{const previous=document.activeElement,box=ref.current;box?.querySelector('button,input,textarea,select')?.focus({preventScroll:true});const key=e=>{if(e.key==='Escape')onClose();if(e.key==='Tab'){const nodes=[...box.querySelectorAll('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled),a[href]')].filter(n=>n.getClientRects().length);if(!nodes.length)return;const first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}};document.addEventListener('keydown',key);return()=>{document.removeEventListener('keydown',key);previous?.focus?.({preventScroll:true});};},[]);
   return <div className="mm-shade" onClick={onClose}><section ref={ref} className="mm-sheet" role="dialog" aria-modal="true" aria-label={title} onClick={e=>e.stopPropagation()}><header><h2>{title}</h2><button className="mm-icon" aria-label="关闭" onClick={onClose}><X size={21}/></button></header>{children}</section></div>;
 }
 function Pairing({access,error,busy,onSubmit,onRetry}){
@@ -45,11 +46,7 @@ export default function MobileApp(){
     finally{setBusy(false);}
   },[refresh]);
   useEffect(()=>{void boot();},[boot]);
-  useEffect(()=>{
-    document.documentElement.classList.add('miobot-mobile-active');
-    const viewport=()=>{document.documentElement.style.setProperty('--mio-mobile-height',(window.visualViewport?.height||window.innerHeight)+'px');};viewport();window.visualViewport?.addEventListener('resize',viewport);window.addEventListener('resize',viewport);
-    return()=>{document.documentElement.classList.remove('miobot-mobile-active');document.documentElement.style.removeProperty('--mio-mobile-height');window.visualViewport?.removeEventListener('resize',viewport);window.removeEventListener('resize',viewport);};
-  },[]);
+  useLayoutEffect(()=>mountMobileViewport(),[]);
   useEffect(()=>{
     if(!access?.authenticated)return;
     const owner=createConnectionRecovery({refresh,onStatus:setConnection,pollMs:2500});recovery.current=owner;owner.start();return()=>{owner.stop();if(recovery.current===owner)recovery.current=null;};
@@ -110,7 +107,7 @@ export default function MobileApp(){
       {page==='memory'&&<><button className="mm-assistant-filter" onClick={()=>openSheet({type:'assistants-memory'})}><Orb small/><span>{assistant?.name}</span><ChevronDown size={16}/></button><p className="mm-note">你可以查看、修改或删除这里保存的资料。</p>{memories.length?memories.map(memory=><button className="mm-memory-card" key={memory.id} onClick={()=>openSheet({type:'memory',value:memory})}><span className="mm-memory-category"><BookOpen size={18}/>{memory.category}<Pencil size={17}/></span><strong>{memory.content}</strong><small>{memory.shared?'已共享给其他助手':'仅这位助手可用'}</small></button>):<div className="mm-empty"><BookOpen/><h2>先让助手了解你一点</h2><p>例如在聊天里说「记住我喜欢简短自然的回答」。</p></div>}</>}
       {page==='settings'&&<><section className="mm-profile"><Orb/><div><h1>MioBot</h1><p>电脑和手机，连接同一个助手。</p></div></section><div className="mm-settings-list"><Setting icon={access.isServer?Cloud:Monitor} title="连接的后台" detail={access.name||'我的 MioBot'} onClick={()=>openSheet({type:'backend'})}/><Setting icon={Smartphone} title="这部设备" detail={access.device?.label||'本机访问'} onClick={()=>openSheet({type:'device'})}/><Setting icon={Inbox} title="消息收件箱" detail={unread?unread+' 条未读':'查看提醒与主动关心'} onClick={()=>openSheet({type:'inbox'})}/><Setting icon={Bell} title="手机系统通知" detail="尚未接通" onClick={()=>openSheet({type:'notifications'})}/><Setting icon={MessageCircle} title="助手设置" detail={assistant?.name} onClick={()=>openSheet({type:'assistant-settings'})}/></div><p className="mm-settings-note">手机系统通知尚未接通。提醒会先保存在聊天和收件箱，不能保证锁屏时弹出通知。</p>{access.device&&<MobileButton secondary onClick={logout}><LogOut size={17}/>断开这部设备</MobileButton>}</>}
     </main>
-    {page==='chat'&&<form className="mm-composer" onSubmit={send}><textarea aria-label="消息" placeholder="和我说说…" rows={1} maxLength={16000} value={draft} onChange={e=>setDrafts(old=>({...old,[draftKey]:e.target.value}))}/>{running?<button type="button" className="mm-send" aria-label="停止回复" onClick={stop}><Square size={18}/></button>:<button className="mm-send" aria-label="发送消息" disabled={!draft.trim()||pendingHere||offline}><ArrowUp size={23}/></button>}</form>}
+    {page==='chat'&&<form className="mm-composer" onSubmit={send}><textarea aria-label="消息" placeholder="和我说说…" rows={1} maxLength={16000} value={draft} onChange={e=>setDrafts(old=>({...old,[draftKey]:e.target.value}))}/><button type="button" className="mm-hide-keyboard" aria-label="收起键盘" onClick={event=>event.currentTarget.form?.querySelector('textarea')?.blur()}><ChevronDown size={21}/></button>{running?<button type="button" className="mm-send" aria-label="停止回复" onClick={stop}><Square size={18}/></button>:<button className="mm-send" aria-label="发送消息" disabled={!draft.trim()||pendingHere||offline}><ArrowUp size={23}/></button>}</form>}
     <nav className="mm-navigation" aria-label="主导航">{[['chat','聊天',MessageCircle],['tasks','安排',CalendarDays],['memory','记忆',BookOpen],['settings','设置',Settings]].map(([id,label,Icon])=><button key={id} aria-current={page===id?'page':undefined} className={page===id?'mm-selected':''} onClick={()=>setPage(id)}><Icon size={23}/><span>{label}</span></button>)}</nav>
     {toast&&<div className="mm-toast" role="status"><span>{toast}</span><button aria-label="关闭提示" onClick={()=>setToast('')}><X size={17}/></button></div>}
     {sheet&&<Sheet key={sheet.type+':'+(sheet.id||sheet.value?.id||'')} title={sheetTitle(sheet)} onClose={closeSheet}>
