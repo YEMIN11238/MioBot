@@ -1,6 +1,6 @@
 {
   "name": "miobot-desktop",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
   "description": "MioBot: a local-first personal assistant desktop, using AstrBot as its agent runtime.",
@@ -18,7 +18,8 @@
     "qrcode": "^1.5.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-parallax-tilt": "1.7.349"
+    "react-parallax-tilt": "1.7.349",
+    "web-push": "3.6.7"
   },
   "devDependencies": {
     "@electron/packager": "^20.3.0",

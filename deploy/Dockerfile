@@ -41,7 +41,7 @@ COPY --from=engine-source /opt/astrbot /opt/astrbot
 WORKDIR /opt/astrbot
 ENV UV_PYTHON_DOWNLOADS=never UV_LINK_MODE=copy
 RUN uv sync --frozen --no-dev --no-install-project --python /usr/local/bin/python3.12 \
-    && uv pip install --python /opt/astrbot/.venv/bin/python --no-deps networkx==3.7 pytz==2026.6 \
+    && uv pip install --python /opt/astrbot/.venv/bin/python --no-deps networkx==3.7 pytz==2026.6 feedparser==6.0.14 feedparser-sgmllib==2.1.0 \
     && test "$(sha256sum uv.lock | cut -d ' ' -f 1)" = 39f90cd7da9ce25928fadd9793dee57c57912fd9cfd787bf296ef08bbd61c792
 WORKDIR /opt/miobot
 COPY package.json package-lock.json LICENSE THIRD_PARTY.md README-cloud.md ./

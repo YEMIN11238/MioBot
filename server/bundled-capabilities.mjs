@@ -1,4 +1,4 @@
-export const BASE_SKILLS=Object.freeze(['memory','reminders','humanize','web']);
+export const BASE_SKILLS=Object.freeze(['memory','reminders','humanize','web','workflows']);
 
 const object=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
 const own=(value,key)=>object(value)&&Object.hasOwn(value,key);
@@ -32,7 +32,7 @@ export function applyBundledCapabilities(store){
   if(!object(store?.state))throw new Error('基础能力需要有效的应用状态');
   const state=store.state;let changed=false;
   if(!object(state.extensions)){state.extensions={};changed=true;}
-  for(const id of ['memory','reminders','web'])if(state.extensions[id]!==true){state.extensions[id]=true;changed=true;}
+  for(const id of ['memory','reminders','web','workflows'])if(state.extensions[id]!==true){state.extensions[id]=true;changed=true;}
   for(const assistant of Array.isArray(state.assistants)?state.assistants:[]){
     if(!object(assistant))continue;
     const current=Array.isArray(assistant.skills)?assistant.skills:[],missing=BASE_SKILLS.filter(id=>!current.includes(id));
@@ -62,6 +62,7 @@ export function bundledCapabilityStatus(store,runtime){
   return {
     memory:{status:'ready',provider:'builtin',reason:'基础跨会话记忆已内置，无需额外向量服务；增强记忆沿用已有配置。',configurationStatus:'configured',verificationStatus:'not_applicable',runtimeReady},
     reminders:{status:'ready',provider:'builtin',reason:'一次性提醒已内置；需要后台持续运行，外部接收渠道仍需验证。',configurationStatus:'configured',verificationStatus:'not_applicable',runtimeReady},
+    workflows:{status:'ready',provider:'builtin',reason:'定时执行已内置，支持一次、每天和每周；实际运行需要后台在线并确认任务已绑定。',configurationStatus:'configured',verificationStatus:'not_applicable',runtimeReady},
     web:{status:search.configured?'configured':'needs_configuration',provider:search.provider,...(search.connectionId?{connectionId:search.connectionId}:{}),reason:search.configured?'搜索服务已配置；是否可用以实际搜索结果为准，配置不等于测试通过。':'网页检索已内置；请保存带密钥的官方DeepSeek连接，或在高级设置配置Tavily。',configurationStatus:search.configured?'configured':'needs_configuration',verificationStatus:'untested',tested:false,runtimeReady,...(lastTest?{lastTest}:{})},
   };
 }

@@ -1,0 +1,5 @@
+name: astrbot_plugin_miobot_workflows
+display_name: MioBot 定时执行
+author: MioBot
+version: 0.1.0
+desc: 复用原生CronJobManager，为已确认任务提供定时触发与受控执行桥。

@@ -1,6 +1,6 @@
 # 开发、验证与构建
 
-本页面向运行源码和参与开发的使用者。MioBot 当前为 0.7.0 预览版；测试通过的范围、实际平台账号验收与正式发行应分别判断。
+本页面向运行源码和参与开发的使用者。MioBot 当前为 0.8.0 预览版；测试通过的范围、实际平台账号验收与正式发行应分别判断。
 
 ## 技术与目录
 
@@ -8,11 +8,13 @@
 
 原生检查入口为 `node scripts/cloud-plugins-native-smoke.mjs`，以及 `tests/helpers/cloud-voice-plugin-smoke.py`、`cloud-qq-plugin-smoke.py`、`cloud-stickers-smoke.py`、`cloud-learning-smoke.py`。Python脚本使用已准备的固定引擎环境执行；普通 `npm test` 不要求云端凭据。
 
+0.8.0 新增原生 CronJobManager 触发适配、MioBot 执行队列与投递事务、RSSHub 原解析模块桥和 `web-push` 3.6.7。操作与验证边界见 [定时工作与资讯订阅](SCHEDULED-WORKFLOWS.md)。RSSHub 的原调度器、发送器、媒体栈和 WebUI 未加载，不产生另一套资讯调度后台。
+
 | 目录 | 职责 |
 | --- | --- |
 | `src/` | 桌面与手机 React 页面、共享 API 与连接恢复、聊天、任务、记忆及设备配对入口 |
 | `desktop/` | Electron 窗口、单实例、本地服务生命周期、系统通知 |
-| `server/` | Node.js API、设备会话与局域网监听、状态与凭据存储、工具权限、提醒和主动关心调度、云端代理 |
+| `server/` | Node.js API、设备会话、状态与凭据、工具权限、定时工作队列与投递、公开 RSS 抓取、Web Push、主动关心与云端代理 |
 | `shared/` | 前后端共享的产品文本和回复展示规则 |
 | `integrations/` | 已署名的插件源码、适配插件、Skills、游戏数据与来源记录 |
 | `runtime/` | 固定版引擎依赖锁，不包含个人运行数据 |
@@ -27,7 +29,7 @@
 
 ## 开发环境
 
-当前源码与桌面打包按 macOS Apple Silicon 验证。需要 Git、Node.js 24+、uv 和可下载 Python 3.12 的网络。先执行根目录 README 的安装步骤。`安装引擎.command` 会获取固定 AstrBot 版本、复制依赖锁、应用托管补丁，并补齐增强记忆当前固定的 `networkx` 和 `pytz` 依赖。仍需完成独立新电脑上的全流程验收。
+当前源码与桌面打包按 macOS Apple Silicon 验证。需要 Git、Node.js 24+、uv 和可下载 Python 3.12 的网络。先执行根目录 README 的安装步骤。`安装引擎.command` 会获取固定 AstrBot 版本、复制依赖锁、应用托管补丁，并补齐增强记忆和 RSS 当前固定的依赖，包括 `networkx`、`pytz`、`feedparser==6.0.14` 和 `feedparser-sgmllib==2.1.0`。仍需完成独立新电脑上的全流程验收。
 
 首次本机启动使用独立后台，可能下载固定版本界面资源。若端口上已有其他后台，应用会拒绝接管；请调整运行方式或明确连接自己的已有实例。默认应用端口为 `4318`，托管引擎为 `26185`，均按本机使用配置。
 
@@ -41,6 +43,7 @@ npm run dev
 
 - 源码运行默认使用 `.data/`，桌面沿用系统应用数据目录中的 `Personal Agent/`。
 - `state.json` 保存应用状态、聊天、手动记忆、任务与通知；`credentials.json` 保存私有连接凭据。
+- 新增的工作计划、执行记录、RSS 来源、待投递快照与确认去重记录同样保存在 `state.json`；原生 Cron 持久任务保存在该实例的引擎数据库中。Web Push 的 VAPID 私钥、设备订阅和推送服务回执保存在私有凭据文件中，不进入普通状态响应。
 - 引擎和插件数据库、增强记忆及其备份位于同一实例数据根目录下的独立引擎目录。
 - 日志保存在实例的数据目录中。日志、截图和测试产物可能含用户信息，不应直接上传。
 - 本地和云端实例默认使用各自资料，连接或切换不会自动合并数据。
@@ -90,6 +93,12 @@ npm run build
 
 新增 8 项视口事件与滚动回归测试，覆盖展开／收起、仅偏移变化、缩放、横屏、外接键盘、延迟事件及卸载清理。浏览器使用可控 VisualViewport 指标检查布局和草稿保留，不能代替用户在真实 iPhone 键盘上的复验。
 
+### 0.8.0 定时工作、RSS 与 Web Push（2026-11-05）
+
+Node 离线测试覆盖原生触发核对、任务幂等、取消、生成重试、等待重试时同助手保序、外部送达不明时不重发、RSS 与收件箱原子保存，以及推送范围和设备撤销。正常 RSS 单测注入解析器，不要求 CI 安装完整原生引擎。
+
+额外使用真实 CronJobManager 与临时 SQLite、真实 RSSHub 解析模块和本机替身模型 / 搜索接口，完成原生工具建 daily 工作、到点搜索、一次性 RSS 摘要及二次去重链路；3 次执行完成，付费模型调用与真实 QQ 发送均为 0。原生 Cron 辅助检查另有 7 项，原解析器检查 8 项，属于不同层次的功能测试，不累加为真实用户任务或效率指标。真实 iPhone 的 HTTPS、主屏幕安装、权限及锁屏通知和 Linux 公网仍待验收。
+
 ## 隔离原生链路检查
 
 以下辅助脚本需要先准备固定版本引擎。它们使用真实引擎和插件，主要配合本机模拟模型、临时数据和受控时钟，避免读取现用资料：
@@ -100,9 +109,21 @@ node tests/helpers/capabilities-smoke.mjs
 node tests/helpers/game-agent-smoke.mjs
 node tests/helpers/personality-agent-smoke.mjs
 node tests/helpers/proactive-native-smoke.mjs
+node scripts/workflows-native-e2e.mjs
 ```
 
 用途分别为原生会话与人格、增强记忆与隔离、固定游戏资料工具、短回复清理链，以及主动关心策略接口。脚本可能生成本地 `artifacts/` 报告；该目录不作为公开源码内容。
+
+`workflows-native-e2e.mjs` 另行启动临时数据根、真实原生引擎与本机替身模型 / 搜索服务，检查定时任务和 RSS 完整工具桥；不读取现用数据库，也不向真实消息平台发送。模块验证入口：
+
+```sh
+node --test tests/workflows*.test.mjs tests/rss-sources.test.mjs tests/web-push.test.mjs
+.runtime/astrbot-source/.venv/bin/python tests/helpers/workflows-native-smoke.py
+.runtime/astrbot-source/.venv/bin/python tests/helpers/rss-parser-smoke.py
+node tests/helpers/rss-sources-native-smoke.mjs
+```
+
+Python 辅助检查依赖已准备好的固定引擎；本机原生 smoke 不能替代 Linux 容器构建、真实模型、手机系统通知或外部平台验收。
 
 直接检查插件类和钩子的入口：
 
@@ -142,7 +163,7 @@ node scripts/package-cloud.mjs
 
 ## 托管运行时的修改边界
 
-AstrBot 不是完全未修改的依赖。`server/assistant-runtime.mjs` 与 `scripts/patch-managed-runtime.mjs` 保留补丁实现：当 MioBot 设置托管标记时，禁用模型自动获得的原生直接发送工具；同步配置也关闭原生 cron 工具，让提醒授权和投递归 MioBot 服务管理。未设置标记的上游独立运行方式保持原行为。
+AstrBot 不是完全未修改的依赖。`server/assistant-runtime.mjs` 与 `scripts/patch-managed-runtime.mjs` 保留补丁实现：托管标记禁用模型自动获得的原生直接发送工具；同步配置关闭绕过主服务授权的原生 cron 工具。新定时插件在此限制下复用原生 CronJobManager 的持久时钟，只回调已确认的 MioBot 计划，不自行创建外部发送任务。workflow 目的使用独立 persona / profile 和最终只读工具白名单；RSS 摘要不授权工具或记忆写入。未设置标记的上游独立运行方式保持原行为。
 
 LivingMemory 有严格 persona 范围检查；人格、主动关心和回复清理插件也有托管适配。原始代码、固定版本、具体修改和许可证见 [THIRD_PARTY.md](../THIRD_PARTY.md) 及各集成目录中的 `NOTICE.md`、来源 JSON。
 
@@ -156,9 +177,9 @@ LivingMemory 有严格 persona 范围检查；人格、主动关心和回复清�
 - `server/device-network.mjs` 管理默认关闭的局域网监听，与桌面本机端口分开。手机通过同一实例访问资料，不新建第二套记忆或提醒调度器。
 - 聊天运行由后台持有。SSE 连接断开只结束观看，显式取消才中止任务；后续客户端通过状态读取已有结果。服务进程本身退出仍会中断生成。
 
-T3 Code 的具体复用范围是小型重试函数及常量，源码、固定提交和 MIT 许可记录在 [integrations/t3code](../integrations/t3code/NOTICE.md)。完整 Effect 连接运行时、T3 Connect、编程 provider、官方移动 App 和推送基础设施均未接入。手机号、QQ 号或其他外部用户不会因设备配对自动归并。
+T3 Code 的具体复用范围是小型重试函数及常量，源码、固定提交和 MIT 许可记录在 [integrations/t3code](../integrations/t3code/NOTICE.md)。完整 Effect 连接运行时、T3 Connect、编程 provider、官方移动 App 和 T3 推送基础设施均未接入。新增标准 Web Push 由 MioBot 使用自己的 Service Worker 和 `web-push` 库实现。手机号、QQ 号或其他外部用户不会因设备配对自动归并。
 
-手机操作与局域网/云端使用步骤见 [MOBILE.md](MOBILE.md)。客户端的手机系统通知状态应持续显示尚未接通，直到真实推送链路单独验收通过。
+手机操作与局域网 / 云端使用步骤见 [MOBILE.md](MOBILE.md)。通知界面按 HTTPS、浏览器支持、主屏幕入口和授权状态逐项显示；「订阅已保存」「服务已接受」与真实手机显示分别判断，不能用替身服务检查代替真机验收。Service Worker 不缓存个人 API 数据，通知正文不携带聊天或完整任务结果。
 
 ## 提交反馈
 

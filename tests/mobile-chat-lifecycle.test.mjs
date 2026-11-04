@@ -21,6 +21,7 @@ async function fixture(t,options={}){
   const fetcher=()=>{external.push('unexpected external request');throw Error('fixture refuses native and external model requests');};
   const app=await startServer({dataRoot:directory,port:0,fetcher,...options});
   t.after(async()=>{await app.close();rmSync(directory,{recursive:true,force:true});assert.deepEqual(external,[]);});
+  app.runtime.syncWorkflows=async()=>({ready:true,jobs:[]});
   app.store.state.modelConnections.push({id:'lifecycle-fixture',model:'fixture-chat',type:'openai_chat_completion',config:{}});
   app.store.state.settings.defaultConnectionId='lifecycle-fixture';app.runtime.status='ready';
   app.store.save();

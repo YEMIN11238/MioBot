@@ -1,0 +1,14 @@
+{
+  "id": "/",
+  "name": "MioBot",
+  "short_name": "MioBot",
+  "description": "你的私人助手",
+  "start_url": "/?mobile=1",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#faf9fd",
+  "theme_color": "#8363bd",
+  "icons": [
+    {"src": "/app-icon.png", "sizes": "1254x1254", "type": "image/png", "purpose": "any"}
+  ]
+}

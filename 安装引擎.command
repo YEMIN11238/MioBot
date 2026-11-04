@@ -12,7 +12,7 @@ cp runtime/astrbot-4.29.3.uv.lock .runtime/astrbot-source/uv.lock
 node scripts/patch-managed-runtime.mjs
 cd .runtime/astrbot-source
 uv sync --locked --no-dev --no-install-project --python 3.12
-# LivingMemory adds these two runtime dependencies beyond the AstrBot lockfile.
+# Memory and RSS parsing add these pinned dependencies beyond the AstrBot lockfile.
 # Keep these pins aligned with deploy/Dockerfile.
-uv pip install --python .venv/bin/python --no-deps networkx==3.7 pytz==2026.6
+uv pip install --python .venv/bin/python --no-deps networkx==3.7 pytz==2026.6 feedparser==6.0.14 feedparser-sgmllib==2.1.0
 print '本机 AstrBot 开发环境已准备好。'

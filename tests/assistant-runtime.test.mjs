@@ -66,7 +66,7 @@ test('capability setup provisions isolated native embedding and summary referenc
 
 test('managed-only native patch is narrow, idempotent and refuses an unknown source version',()=>{
   const root=mkdtempSync(join(tmpdir(),'miobot-native-patch-')),file=join(root,'astrbot/core/astr_main_agent.py');
-  try{mkdirSync(join(root,'astrbot/core'),{recursive:true});writeFileSync(file,'import os\n    if event.platform_meta.support_proactive_message:\n        pass\n');
+  try{mkdirSync(join(root,'astrbot/core'),{recursive:true});writeFileSync(file,'import os\n    if event.platform_meta.support_proactive_message:\n        pass\n    fallback_providers = _get_fallback_chat_providers(\n');
     assert.equal(patchManagedRuntime(root).applied,true);const patched=readFileSync(file,'utf8');assert.match(patched,/MIOBOT_DISABLE_NATIVE_OUTBOUND_TOOLS/);patchManagedRuntime(root);assert.equal(readFileSync(file,'utf8'),patched);
     writeFileSync(file,'unknown future source');assert.throws(()=>patchManagedRuntime(root),/版本/);assert.equal(readFileSync(file,'utf8'),'unknown future source');
   }finally{rmSync(root,{recursive:true,force:true});}
