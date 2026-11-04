@@ -1,0 +1,7 @@
+aiohttp
+Pillow>=10
+requests
+# Optional Cloudflare R2 sync only; not required for local libraries.
+# minio>=7.2.20,<8
+# Optional semantic index; the bundled MioBot engine already supplies it.
+# faiss-cpu

@@ -50,6 +50,7 @@ export class Connections {
   }
   async saveChannel(body,id){
     const catalog=this.channelCatalog||await this.channels(),old=id?this.store.channel(id):null,type=body.type||old?.type,template=catalog.types.find(x=>x.type===type);if(!template)throw new Error('请选择支持的消息渠道');
+    if(old&&Object.values(this.store.state.cloudPlugins||{}).some(p=>p.enabled&&p.channelId===old.id))throw new Error('请先在扩展中心停用此渠道绑定的同款组件，再修改渠道并重新验证主人会话。');
     const parts=splitConfig(mergeConfig(mergeConfig(template.config||{},old?.config||{}),body.config||{}),template.schema),extra=splitConfig(body.secrets||{});const secret=mergeConfig(mergeConfig(this.store.secrets.channels[old?.id]||{},parts.secrets),mergeConfig(extra.safe,extra.secrets));
     const assistantId=body.assistantId??old?.assistantId??'daily';this.store.assistant(assistantId);
     const value={...(old||{}),id:old?.id||randomUUID(),name:boundedText(body.name??old?.name??template.name,'渠道名称',60),type,config:parts.safe,assistantId,target:body.target??old?.target??'',enabled:body.enabled??old?.enabled??false,supportProactive:catalog.source==='astrbot'&&template.supportProactive,supportStreaming:template.supportStreaming,status:'saved'};

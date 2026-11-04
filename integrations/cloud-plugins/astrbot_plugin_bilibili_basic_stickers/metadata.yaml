@@ -1,0 +1,9 @@
+name: astrbot_plugin_bilibili_basic_stickers
+display_name: B站基础表情收藏
+desc: 主人明确请求时，收集固定11张公开小电视基础表情并复用原生图库发送。
+version: v0.1.0
+author: AIPM
+repo: ""
+support_platforms:
+  - aiocqhttp
+astrbot_version: ">=4.29.3"

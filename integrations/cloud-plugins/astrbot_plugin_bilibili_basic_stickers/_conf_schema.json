@@ -1,0 +1,14 @@
+{
+  "owner_qq": {
+    "type": "string",
+    "description": "允许收藏和点发表情的主人QQ",
+    "default": "",
+    "hint": "必须显式填写；留空禁用所有操作。"
+  },
+  "owner_umo": {
+    "type": "string",
+    "description": "主人QQ完整私聊UMO",
+    "default": "",
+    "hint": "例如 your-qq-channel:FriendMessage:主人QQ号，必须与主人QQ及真实会话一致。"
+  }
+}

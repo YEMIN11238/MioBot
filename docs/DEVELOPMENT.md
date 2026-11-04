@@ -1,14 +1,18 @@
 # 开发、验证与构建
 
-本页面向运行源码和参与开发的使用者。MioBot 当前为 0.5.0 预览版；测试通过的范围、实际平台账号验收与正式发行应分别判断。
+本页面向运行源码和参与开发的使用者。MioBot 当前为 0.7.0 预览版；测试通过的范围、实际平台账号验收与正式发行应分别判断。
 
 ## 技术与目录
 
+0.7.0 对照实际云端12个插件目录，保留3项已有适配，新增9个默认关闭的源码组件及统一配置、精确QQ主人路由和加载管理。详见 [插件对照](CLOUD-PLUGIN-PARITY.md)。真实固定引擎中9组件同进程加载及工具注册通过，38项Python隔离检查通过。它们没有使用现用账号、模型凭据或付费调用，不代表真实QQ、声音或空间验收。
+
+原生检查入口为 `node scripts/cloud-plugins-native-smoke.mjs`，以及 `tests/helpers/cloud-voice-plugin-smoke.py`、`cloud-qq-plugin-smoke.py`、`cloud-stickers-smoke.py`、`cloud-learning-smoke.py`。Python脚本使用已准备的固定引擎环境执行；普通 `npm test` 不要求云端凭据。
+
 | 目录 | 职责 |
 | --- | --- |
-| `src/` | React 页面、连接表单、聊天呈现、任务和记忆管理、云端入口 |
+| `src/` | 桌面与手机 React 页面、共享 API 与连接恢复、聊天、任务、记忆及设备配对入口 |
 | `desktop/` | Electron 窗口、单实例、本地服务生命周期、系统通知 |
-| `server/` | Node.js API、状态与凭据存储、工具权限、提醒和主动关心调度、云端代理 |
+| `server/` | Node.js API、设备会话与局域网监听、状态与凭据存储、工具权限、提醒和主动关心调度、云端代理 |
 | `shared/` | 前后端共享的产品文本和回复展示规则 |
 | `integrations/` | 已署名的插件源码、适配插件、Skills、游戏数据与来源记录 |
 | `runtime/` | 固定版引擎依赖锁，不包含个人运行数据 |
@@ -74,6 +78,18 @@ npm run build
 
 这些是自动化检查，不是同等数量的真实用户任务。测试中的模拟模型、向量服务和外部渠道不能用来推算真实模型质量、送达率、平均费用或效率提升。
 
+### 0.6.0 手机 Web 检查（2026-11-04）
+
+本次实现后重新运行 `npm test` 223 项、`node --test deploy/*.test.mjs` 6 项，共 229 项通过。检查使用隔离数据、真实本机 HTTP 边界与替身模型，不调用付费模型；这个数字是自动化用例数，不是实际手机、真实用户任务或通知送达的样本数。0.5.0 的 185 项记录保留为历史验证，不与当前数量累加。
+
+新增覆盖一次性配对、设备会话哈希与撤销、个人设备的路由权限、局域网开关、HTTP 来源校验、后台回复在观看页面断开后继续、同请求重复提交与显式停止、T3 重试函数适配、连接恢复不重放写操作、北京时间任务编辑及迟到确认保护。浏览器 390px / 320px 交互核查与真实 iPhone 扫码是不同层次的验证；当前不据此声称真实 iOS / Android、APNs/FCM 推送或 Linux 公网部署已验收。
+
+### 0.6.1 手机键盘修复（2026-11-04）
+
+根据用户在 iPhone 上聚焦聊天输入框后页面上移、留下大块空白的截图，移动端改为固定外壳，并同时跟踪可视视口高度和顶部偏移。键盘展开时收起底部导航；关闭后恢复。原本在聊天底部时保持最新消息可见，正在阅读历史时保留位置；不禁止双指缩放。
+
+新增 8 项视口事件与滚动回归测试，覆盖展开／收起、仅偏移变化、缩放、横屏、外接键盘、延迟事件及卸载清理。浏览器使用可控 VisualViewport 指标检查布局和草稿保留，不能代替用户在真实 iPhone 键盘上的复验。
+
 ## 隔离原生链路检查
 
 以下辅助脚本需要先准备固定版本引擎。它们使用真实引擎和插件，主要配合本机模拟模型、临时数据和受控时钟，避免读取现用资料：
@@ -103,10 +119,10 @@ node --test tests/helpers/proactive-policy.test.mjs
 
 ```sh
 npm run build
-node scripts/package-mac.mjs
+node scripts/package-mac.mjs --out release/mobile-preview-0.6.0
 ```
 
-当前脚本只接受 `darwin/arm64`，产物为 `release/MioBot-darwin-arm64/MioBot.app`。它需要已准备好的固定版 Python、引擎依赖和启动后获得的界面静态资源；不保证在任意新电脑上直接运行打包命令即可成功。
+当前脚本只接受 `darwin/arm64`。上面的 `--out` 将手机预览版输出到 `release/mobile-preview-0.6.0/MioBot-darwin-arm64/MioBot.app`，保留原有桌面包；不传 `--out` 时仍使用 `release/MioBot-darwin-arm64/MioBot.app`。它需要已准备好的固定版 Python、引擎依赖和启动后获得的界面静态资源；不保证在任意新电脑上直接运行打包命令即可成功。
 
 打包时提供 Python、引擎代码、插件和所需资源，不复制 `.data/`、运行日志或聊天凭据。关闭窗口会隐藏桌面并保留后台，真正退出应用会停止本实例持有的服务。
 
@@ -131,6 +147,18 @@ AstrBot 不是完全未修改的依赖。`server/assistant-runtime.mjs` 与 `scr
 LivingMemory 有严格 persona 范围检查；人格、主动关心和回复清理插件也有托管适配。原始代码、固定版本、具体修改和许可证见 [THIRD_PARTY.md](../THIRD_PARTY.md) 及各集成目录中的 `NOTICE.md`、来源 JSON。
 
 修改这些边界时，需要验证应用内聊天与外部渠道、主动生成、停止重试等所有入口，防止出现两套调度、重复投递或绕过用户选择。
+
+## 手机连接的实现边界
+
+- `src/MobileApp.jsx`、`src/mobile.css` 提供四页移动界面；`src/client-api.mjs` 统一同源请求，设备会话由 HttpOnly Cookie 携带。
+- `src/connection-recovery.mjs` 管理唯一的刷新与恢复循环。重连只读取权威状态，提交使用自己的稳定请求编号；恢复不会自动重放 POST。
+- `server/device-sessions.mjs` 保存配对码和设备会话的哈希、有效期与撤销状态；`server/device-access.mjs` 将本机所有者、云端所有者及个人设备授权分开。
+- `server/device-network.mjs` 管理默认关闭的局域网监听，与桌面本机端口分开。手机通过同一实例访问资料，不新建第二套记忆或提醒调度器。
+- 聊天运行由后台持有。SSE 连接断开只结束观看，显式取消才中止任务；后续客户端通过状态读取已有结果。服务进程本身退出仍会中断生成。
+
+T3 Code 的具体复用范围是小型重试函数及常量，源码、固定提交和 MIT 许可记录在 [integrations/t3code](../integrations/t3code/NOTICE.md)。完整 Effect 连接运行时、T3 Connect、编程 provider、官方移动 App 和推送基础设施均未接入。手机号、QQ 号或其他外部用户不会因设备配对自动归并。
+
+手机操作与局域网/云端使用步骤见 [MOBILE.md](MOBILE.md)。客户端的手机系统通知状态应持续显示尚未接通，直到真实推送链路单独验收通过。
 
 ## 提交反馈
 

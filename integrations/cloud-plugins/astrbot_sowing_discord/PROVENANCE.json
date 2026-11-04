@@ -1,0 +1,103 @@
+{
+  "captured": "2026-11-04",
+  "source": "read-only source snapshot of existing owner-managed AstrBot deployment",
+  "upstreamRepository": "https://github.com/anka-afk/astrbot_sowing_discord",
+  "sourceVersion": "v0.916",
+  "license": "MIT",
+  "credentialsIncluded": false,
+  "runtimeDatabasesIncluded": false,
+  "files": [
+    {
+      "path": ".gitignore",
+      "original_sha256": "265b59ea84fdd597750fd053096e031499a9cf136c5ae34c229486f2a6f058cf"
+    },
+    {
+      "path": "LICENSE",
+      "original_sha256": "e40601ba687df67a83ed6591635f3249238850aae3ddb90085502263e93c651a"
+    },
+    {
+      "path": "README.md",
+      "original_sha256": "57b8837cc43c37d326624bfd9bd433af288bb26e24a76cc6abf20046fa03dd88"
+    },
+    {
+      "path": "_conf_schema.json",
+      "original_sha256": "761c81ee9640319496ae7d1a1fc9936a94377d74a27f14cb57ed443fc0d82b59"
+    },
+    {
+      "path": "config.py",
+      "original_sha256": "815e2e6dd891a58779eb55a7e0ae07b937e2fbcb6b9fc0fabfed45a214b2fe9d"
+    },
+    {
+      "path": "core/__init__.py",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "core/evaluation/__init__.py",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "core/evaluation/emoji.py",
+      "original_sha256": "e818ac22d007b8b66fb59384174f733a2ca4fb25262d0558683d2793eb72b475"
+    },
+    {
+      "path": "core/evaluation/evaluator.py",
+      "original_sha256": "adc8a6478d24499231d4a600e55a4be637f63648998f2d27e33d419fdb0338e8"
+    },
+    {
+      "path": "core/evaluation/ml_evaluator_api.py",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "core/evaluation/rules.py",
+      "original_sha256": "494ea0666febc7d1e5f8bf365b10aa4e840a9ec2b4b7e87bb6f40d53b527aa1b"
+    },
+    {
+      "path": "core/forward_manager.py",
+      "original_sha256": "2ea162b156a76a95a4d6bf39401b84ddfe0e826b5103127af3334e008ab497b6"
+    },
+    {
+      "path": "core/message_handler.py",
+      "original_sha256": "4af7dd33f6206a64fa9a54c759caa778f2c79cb07687bf1d6af491f71ac41ed7"
+    },
+    {
+      "path": "main.py",
+      "original_sha256": "1c67e954228962916c80ea41a2be73a71f55197989067f65b46c933cf4132400"
+    },
+    {
+      "path": "metadata.yaml",
+      "original_sha256": "8586593a57b0acf43273814c2dfc5e65e692f1633e486db21e2a181bdb46c1e9"
+    },
+    {
+      "path": "storage/__init__.py",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "storage/base.py",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "storage/database/__init__.py",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "storage/database/models.py",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "storage/database/operations.py",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "storage/local_cache.py",
+      "original_sha256": "6af33c48a873b6ebe3e5cf80287e24282057205ecd12deba59780c77bd10a3dc"
+    },
+    {
+      "path": "utils/__init__.py",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "utils/message_utils.py",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

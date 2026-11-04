@@ -38,7 +38,7 @@ export function nativeFixture() {
       const id='profile-'+(profiles.size+1);profiles.set(id,{conf_id:id,name:body.name,config:body.config});return ok({conf_id:id});
     }
     if(path.startsWith('/config-profiles/')){const id=decodeURIComponent(path.slice('/config-profiles/'.length));if(method==='GET')return ok({config:profiles.get(id)?.config});profiles.set(id,{...profiles.get(id),config:body});return ok({});}
-    if(path==='/config-routes')return ok({routing:Object.fromEntries(routes)});
+    if(path==='/config-routes'){if(method==='PUT'){routes.clear();for(const [umo,id] of Object.entries(body.routing||{}))routes.set(umo,id);}return ok({routing:Object.fromEntries(routes)});}
     if(path.startsWith('/config-routes/')){const umo=decodeURIComponent(path.slice('/config-routes/'.length));if(method==='DELETE')routes.delete(umo);else if(method==='PUT')routes.set(umo,body.config_id);return ok({});}
     if(path === '/chat/sessions/new')return ok({session_id:'fixture-session-'+(++session)});
     if(/^\/chat\/sessions\/[^/]+\/stop$/.test(path))return ok({status:'stopping'});

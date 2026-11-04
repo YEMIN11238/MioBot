@@ -1,0 +1,70 @@
+{
+  "source": "Read-only export from the owner's existing AstrBot cloud deployment",
+  "sourceDate": "2026-11-04",
+  "sourcePackage": "https://github.com/zexuanw958-svg/dafeiyu-config-pack",
+  "sourcePackageRevision": "8c01b0361b8a4baff5be3d2bc67ed55108953086",
+  "license": "MIT",
+  "licenseSource": "dafeiyu-config-pack/LICENSE",
+  "integrationVersion": "v0.2.1-miobot.1",
+  "containsCredentials": false,
+  "containsUserAudio": false,
+  "containsUserState": false,
+  "excluded": [
+    "sing_server/voice/",
+    "__pycache__/",
+    "*.pyc"
+  ],
+  "files": {
+    "LICENSE": {
+      "sha256": "158a9cfa16972b8c1c5c167287922b8c54f62a9ea92ae628d58d06cb0ffb80d7"
+    },
+    "README.md": {
+      "sha256": "d99f646449b7f7bd8bb79b5bb3564cbf8c2998295c9ed9c388707144502947f0",
+      "cloudSourceSha256": "d99f646449b7f7bd8bb79b5bb3564cbf8c2998295c9ed9c388707144502947f0"
+    },
+    "_conf_schema.json": {
+      "sha256": "7e826a97f4f1b16df9d46ed06599569314759fe38ef53f8c36de6f64d2f6196e",
+      "cloudSourceSha256": "37d55c5d136b19d3404f948b5c20983b3ec8ddeb5e09adc95dd179db189c6a0c"
+    },
+    "doubao_sing.py": {
+      "sha256": "89de87ab931902dc9ffcf220ef53067c64547186139c5b77b4785a0317738c2f",
+      "cloudSourceSha256": "89de87ab931902dc9ffcf220ef53067c64547186139c5b77b4785a0317738c2f"
+    },
+    "main.py": {
+      "sha256": "37cce25976614c46f9880219f16add7bbae50e6d85ebc7ea5d1ce5382d76d123",
+      "cloudSourceSha256": "30aa0f9470677092beafaeeae68dd1546966df7efe80126e42e6bcfa759e92a8"
+    },
+    "metadata.yaml": {
+      "sha256": "b58bf7d256a8ff9ba05ea0bc7ab36ff425098d678d6b428575f753563427739c",
+      "cloudSourceSha256": "56aad4871ef725c4e5916014c368eb42d64d71df5d66dc2e6ca65af26ef70e92"
+    },
+    "sing_server/doubao_backend.py": {
+      "sha256": "d4e9f203e79259877263653981a6f3227292e2fc70b37615af2aaf0119cc8ef2",
+      "cloudSourceSha256": "d4e9f203e79259877263653981a6f3227292e2fc70b37615af2aaf0119cc8ef2"
+    },
+    "sing_server/melodies.py": {
+      "sha256": "bd92cc27c0db18ee5e8584aa7b1800dffe9150d9375125b29bfad1699f80ee5a",
+      "cloudSourceSha256": "bd92cc27c0db18ee5e8584aa7b1800dffe9150d9375125b29bfad1699f80ee5a"
+    },
+    "sing_server/pitch_check.py": {
+      "sha256": "4192eb63a1275305ea46766d12c4183fdacb132309fb457736311540825a5b32",
+      "cloudSourceSha256": "4192eb63a1275305ea46766d12c4183fdacb132309fb457736311540825a5b32"
+    },
+    "sing_server/requirements.txt": {
+      "sha256": "ad2b2e1bc1e7de8ff6823e48feebbc4178de926152fa19694970b4647eb056f7",
+      "cloudSourceSha256": "ad2b2e1bc1e7de8ff6823e48feebbc4178de926152fa19694970b4647eb056f7"
+    },
+    "sing_server/setup_windows.ps1": {
+      "sha256": "1b5ff7d524bd8c9ecf904b0010066d90eb123ffb855dd34d2eaa5e077ea761cf",
+      "cloudSourceSha256": "1b5ff7d524bd8c9ecf904b0010066d90eb123ffb855dd34d2eaa5e077ea761cf"
+    },
+    "sing_server/sing_server.py": {
+      "sha256": "75f4b81b6926c166455a00262128091febf470014681508413f53dcde2eb7f97",
+      "cloudSourceSha256": "75f4b81b6926c166455a00262128091febf470014681508413f53dcde2eb7f97"
+    },
+    "sing_server/start_sing_server.bat": {
+      "sha256": "5c2d616d0ab7dfbd170515597a1b7de20557e36a81110ed22f1cd7cbdce9d3b4",
+      "cloudSourceSha256": "5c2d616d0ab7dfbd170515597a1b7de20557e36a81110ed22f1cd7cbdce9d3b4"
+    }
+  }
+}

@@ -1,0 +1,328 @@
+{
+  "captured": "2026-11-04",
+  "source": "existing owner-managed AstrBot deployment; plugin source only",
+  "credentialsIncluded": false,
+  "userLibraryIncluded": false,
+  "files": [
+    {
+      "path": "config.py",
+      "sha256": "29562bdd38977e1d134d154a077324fbb4c8a46d62a0ded4bbf91668c53ae8c5"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "e40601ba687df67a83ed6591635f3249238850aae3ddb90085502263e93c651a"
+    },
+    {
+      "path": "requirements.txt",
+      "sha256": "2620e0a9197dda0160b2e67bdfeb482edd02b055212c41e149e572e6cc1a4f71"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "127a2adc1126f680bc191d6bef3019f156b4c1b9f83a52b1490c0bcd3dcca0cd"
+    },
+    {
+      "path": "metadata.yaml",
+      "sha256": "0731154ed7b03a46241877ca7bca2079b4266258c4dabdcfcbd63cdc2dbac656"
+    },
+    {
+      "path": "__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "README.md",
+      "sha256": "b594b8e084dc87a57997028f0e16a0ef41cb428b7a85f68e26f0eb56c71f9d6b"
+    },
+    {
+      "path": "_conf_schema.json",
+      "sha256": "14dd0ada57a5ea5d8e50b3cb3fe9fd3e81aae72fa753ed42234871d54e0dd2f1"
+    },
+    {
+      "path": "utils.py",
+      "sha256": "c03e9dfd7e149599e2f9537c8645a6cfe5f9c331d68a7574e69985c5133462a4"
+    },
+    {
+      "path": "logo.png",
+      "sha256": "e31b56ccd0e749f13a72ae2fc8d0f6c60381b2ae71ff73b404473c0ca513796b"
+    },
+    {
+      "path": "main.py",
+      "sha256": "dd6616ca31eed345c46f31d06b35ef8ee00bb506e9a7072335870adc1e76f9ca"
+    },
+    {
+      "path": "DEVELOPMENT.md",
+      "sha256": "be6d7f987fe18d6cff96fbbfd6b7de732adecc7da5db0052c4a23affd51c9be7"
+    },
+    {
+      "path": "image_host/img_sync.py",
+      "sha256": "c2c3c14c02dc2eb07b31b8af29c5c904a932eaa4945d873f36deea317b9b8074"
+    },
+    {
+      "path": "image_host/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "image_host/core/file_handler.py",
+      "sha256": "3d743742a274b9eff0b4d6f18800e9343099ba1cb4c1671f54e24788163f1f2a"
+    },
+    {
+      "path": "image_host/core/upload_tracker.py",
+      "sha256": "3054fd0424db9f8d6657a98ec7ada1c01f8cef8fa29673e233297b2f8246299d"
+    },
+    {
+      "path": "image_host/core/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "image_host/core/sync_manager.py",
+      "sha256": "f0f80c21082c877d00710874f821f835cf266949e1917808816549663c810607"
+    },
+    {
+      "path": "image_host/providers/provider_template.py",
+      "sha256": "67d448e5ac283d2a346bff98434c95347d0a10703e8daf61460341a59eade800"
+    },
+    {
+      "path": "image_host/providers/cloudflare_r2_provider.py",
+      "sha256": "a11a04bfc0157f9106a9f31c6b3ab8b3281b9a05c2ef4e94282f74633a821aff"
+    },
+    {
+      "path": "image_host/providers/webdav_provider.py",
+      "sha256": "5cdf55b49f250dbb038bd0fce91275db5347c6fb61ceae9e7552a0e5f933cd5b"
+    },
+    {
+      "path": "image_host/providers/__init__.py",
+      "sha256": "185243923e77777ca0d1769e0c900e94f319ab2c57821f127b1ddb0e5afc965d"
+    },
+    {
+      "path": "image_host/providers/lsky_provider.py",
+      "sha256": "391ca415ffdc3238500f9961569be14690670d0b5c74bc0faeded9b527f1765d"
+    },
+    {
+      "path": "image_host/providers/stardots_provider.py",
+      "sha256": "7026ed0acfd0aaa6bcd4b7055c759e222b8098a66d14c4f4d50b5a26230c61f9"
+    },
+    {
+      "path": "image_host/interfaces/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "image_host/interfaces/image_host.py",
+      "sha256": "a12752f4b70e55275a3c3b5e9e9212d4b489efb6db7d9db622a1c6de95d327f2"
+    },
+    {
+      "path": "mixins/web_api.py",
+      "sha256": "d9073e519fddad9208ee459e39f3ba6cc5fbe05dd0bea49a220436254c5bb206"
+    },
+    {
+      "path": "mixins/event_handlers.py",
+      "sha256": "9f77b9f136bfe3f3b4f90fbcd141b11620fc889cda895a415b611add991cbdb2"
+    },
+    {
+      "path": "mixins/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "mixins/integration.py",
+      "sha256": "81cfcb846d723bf898a5a7d8d45c59529980c9b67d2bf26472f3750f7a40bd83"
+    },
+    {
+      "path": "mixins/commands.py",
+      "sha256": "bc5ca8b290b30c9aa278e27d2f321ba9f36b588c6f346ba34a5a58dc526b4be3"
+    },
+    {
+      "path": "backend/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/auto_collect.py",
+      "sha256": "4e2594c277ba08326a742dbaa84bce1b570556319a98dd5fe613fd396f870c20"
+    },
+    {
+      "path": "backend/plugin_settings.py",
+      "sha256": "efaa745b2bb89b9530d7f7a63c25ebbf14afdc16b7d347f2aeaf335efdd0f6d0"
+    },
+    {
+      "path": "backend/auto_collect_index.py",
+      "sha256": "387e0ae43b98c8bf64d8657e3fc71d771828e29aa8f2410e0786b1019e901310"
+    },
+    {
+      "path": "backend/packs/categories.py",
+      "sha256": "f9d244f7e70811fcff60e4a5b826cdbb17d9f851f10f9917160c09e5340203ad"
+    },
+    {
+      "path": "backend/packs/updates.py",
+      "sha256": "a65c35821595b1cab775e51049b31616aaf781de95b82d635510ea335025b016"
+    },
+    {
+      "path": "backend/packs/protocol.py",
+      "sha256": "fd69a2ec41f386fb5ab8d77e965414d75e4374a4e451547cdf8928499e744527"
+    },
+    {
+      "path": "backend/packs/__init__.py",
+      "sha256": "bb7eaeb7a163d7aea46a0de5b3697806c6359a959d803a5952d151bfe3aeb43a"
+    },
+    {
+      "path": "backend/packs/transfer.py",
+      "sha256": "cfd29436ff611d95fc85d43f51849a1c7f600c0433e19b70610717725e67c252"
+    },
+    {
+      "path": "backend/packs/resolver.py",
+      "sha256": "8cad194ae36f0bdc4ebc77f24b1148ef4c12ebac1e35cab66ef5e457ef77fc16"
+    },
+    {
+      "path": "backend/packs/storage.py",
+      "sha256": "904a77bb07f22ccab70fabf3b90e7361831f55217340fde02567bade14f2c4db"
+    },
+    {
+      "path": "backend/packs/images.py",
+      "sha256": "351380f71b6b8c58a9bcbb2bae15f02182b740823d37ffb11c9057b44ae42104"
+    },
+    {
+      "path": "backend/semantic/task.py",
+      "sha256": "92499d68dda0e44eaa64641a4f184ebbf6df92cc116091a64b4bc8d17f8e75aa"
+    },
+    {
+      "path": "backend/semantic/models.py",
+      "sha256": "faa87238b8fe24c4ccf2cf84371b7014e9c940a932439fdadddab678b49ad227"
+    },
+    {
+      "path": "backend/semantic/query.py",
+      "sha256": "71bccf3e75823bcaea8eae46b80a1d7bf9a177202a411711744d7804b2785ed9"
+    },
+    {
+      "path": "backend/semantic/index.py",
+      "sha256": "3d68584d8bfc100b62522fd44a9bd141c06c7a0f8d04951205ac700a7887509f"
+    },
+    {
+      "path": "backend/semantic/__init__.py",
+      "sha256": "77dcd34b5201e2b58264bbab969eea51abcf67ba1effb30710f0c427c274ce9b"
+    },
+    {
+      "path": "backend/semantic/caption.py",
+      "sha256": "bbb54aaf4223240f79fef472d2e93250285dcc14145cc3578dd8098858ffce19"
+    },
+    {
+      "path": "backend/semantic/storage.py",
+      "sha256": "1cfa3b1c1d14b8d87996ed6a832bd1135141c2896a2d0e8b1bbd6c1a48f57bc9"
+    },
+    {
+      "path": "backend/meme_parser/__init__.py",
+      "sha256": "7eb8437531348e448e87ca36d83df7047ac42cdb36d7db736bc4a6d991b34d37"
+    },
+    {
+      "path": "backend/meme_parser/types.py",
+      "sha256": "ac38b86c852f292637793bbe3d7852918cd0c45c7c138139810c57dfc83694b7"
+    },
+    {
+      "path": "backend/meme_parser/text_safety.py",
+      "sha256": "be83dad818f2d7e9abb8fa44662f1726e194b6c7eaf4835e12aef34284220d75"
+    },
+    {
+      "path": "backend/meme_parser/parser.py",
+      "sha256": "345206950d4087c435b59276a77fa2422e377c73f6fafbaa87c70113af3ffaf4"
+    },
+    {
+      "path": "backend/meme_parser/context.py",
+      "sha256": "58dde7824f4c3fc0fa852532de3f58493f54c867d516393e2a46514778fd05b9"
+    },
+    {
+      "path": "pages/app/index.html",
+      "sha256": "28aeb91d9e3a782a50244e8da608bda94d7306f21ed50b09b7d861a16868aa65"
+    },
+    {
+      "path": "pages/app/settings/index.html",
+      "sha256": "144a709fd67eaaa0c7fcf7124a04ff72422f2a2eef6f234412ed40f2cd4146af"
+    },
+    {
+      "path": "pages/app/settings/config.js",
+      "sha256": "2813e212e532845eac5086c48f27c8c99db4259cc8cf28a8b1376d1152bf9cab"
+    },
+    {
+      "path": "pages/app/settings/script.js",
+      "sha256": "306817ba244260d0a22d0acecd9ca0eb0d55e7b9ba88d1e3e27cb6f65ff235a7"
+    },
+    {
+      "path": "pages/app/settings/storage-guide.js",
+      "sha256": "7a2917bfad151eae7123694d7ea2714b3348c032e900ab11512c1e6202794144"
+    },
+    {
+      "path": "pages/app/settings/style.css",
+      "sha256": "ca86c2cc50a543764a573030d354c8be11ae38510585bf2eb5df73035fae154b"
+    },
+    {
+      "path": "pages/app/catalog/updates.js",
+      "sha256": "8dea75fe932d652d1fda8d0d437430f60cd1be3331896da3f90dbac399df6459"
+    },
+    {
+      "path": "pages/app/catalog/index.html",
+      "sha256": "69ca6f7f351cee6b6abb5cbb4867690a10b43100e45c164a7a37f3ffe34ccb8b"
+    },
+    {
+      "path": "pages/app/catalog/script.js",
+      "sha256": "9d5746b942a17acf38b635679ff41fc45cd96697960e4e4a1eae5dcaf03f8182"
+    },
+    {
+      "path": "pages/app/catalog/style.css",
+      "sha256": "cce196eef71c3e110c7260925e7b3131e061f2676f0b9b1d14b0bee50fbe33da"
+    },
+    {
+      "path": "pages/app/shared/ui.js",
+      "sha256": "8ba3d984af4ef62c5a0335545a77b4ea045a5da2775f0f88579c5a2190f98937"
+    },
+    {
+      "path": "pages/app/shared/preview.js",
+      "sha256": "8cfa6b2f40cc8376e7f3a33c1d9451f40e040c770f32f5c7e50bae5fc785b4e7"
+    },
+    {
+      "path": "pages/app/shared/fa.min.css",
+      "sha256": "32cb3092b05488fb95d6db6ff7c1bcc74ff9fc44199fedef949443dc34baaf3b"
+    },
+    {
+      "path": "pages/app/shared/ui.css",
+      "sha256": "bc5869adcc068db6f2222e61a3d5b213513bf416fdedfaa74a7888a951e68163"
+    },
+    {
+      "path": "pages/app/shared/webfonts/fa-regular-400.woff2",
+      "sha256": "8e7e5ea1b15f62ab14dbd41768e8fbcd21cc859a4ea5da812457ee714299fb35"
+    },
+    {
+      "path": "pages/app/shared/webfonts/fa-v4compatibility.woff2",
+      "sha256": "694a17c3d9d6c05f8aac63c544615552a4b220e9a4de863d87341a6bcfc1bc8d"
+    },
+    {
+      "path": "pages/app/shared/webfonts/fa-solid-900.woff2",
+      "sha256": "7152a6933ee3d690ec2af3d09da9d701723d16aa3410a6d80f28ff8866f3b880"
+    },
+    {
+      "path": "pages/app/shared/webfonts/fa-brands-400.woff2",
+      "sha256": "748332090c4b8e20f95d0ff59f0be20fa9c889359d3b36d4b886d73376054207"
+    },
+    {
+      "path": "pages/app/semantic/index.html",
+      "sha256": "24de8c5669897a76fb8388b6d519fe7b4134c33d9e510c490b50fcc60f7998df"
+    },
+    {
+      "path": "pages/app/semantic/script.js",
+      "sha256": "9376363de42b1e15f95787cd2373ef58ed1c17a9981a9c0d8cd65bef7c128712"
+    },
+    {
+      "path": "pages/app/semantic/style.css",
+      "sha256": "c0dfe8b7a6533fb5b531efc58f4f7cb85453c5742395915567c55d417b8794a9"
+    },
+    {
+      "path": "pages/app/a_manage/index.html",
+      "sha256": "a6b1d0d7dce4db6a763db596c8a3e21f61e89a37b670571ff5b22ebe22d280e7"
+    },
+    {
+      "path": "pages/app/a_manage/script.js",
+      "sha256": "04d6f15082143d14f07cb4ae52981d665dccb900e6735003727fc795851fb7ae"
+    },
+    {
+      "path": "pages/app/a_manage/pack-transfer.js",
+      "sha256": "c827ff880e9cd58379b49f1af352f284267ed236ea48b1ef3ef572c7e3179992"
+    },
+    {
+      "path": "pages/app/a_manage/style.css",
+      "sha256": "ba4bed004fd1a2f7274ae7158f4ee2cbe8bfd6c79b9135e991520397c993450d"
+    }
+  ]
+}

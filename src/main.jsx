@@ -13,18 +13,15 @@ import {extensionItems,extensionUsable,sourceURL} from './extensions-api.mjs';
 import FollowingBot from './FollowingBot.jsx';
 import AssistantCapabilities from './AssistantCapabilities.jsx';
 import AboutMioBot from './AboutMioBot.jsx';
+import MobileApp from './MobileApp.jsx';
+import {api,clientFetch,newRequestId} from './client-api.mjs';
+import {createConnectionRecovery} from './connection-recovery.mjs';
 import {productText} from '../shared/product-text.mjs';
 import {applyChatStreamEvent,belongsToActiveStream} from './chat-stream.mjs';
 import './style.css';
 import './native.css';
 import './experience.css';
 
-async function api(path, method='GET', body) {
-  const r = await fetch('/api'+path, {method, headers:{'X-Personal-Agent':'1','Content-Type':'application/json'}, ...(body ? {body:JSON.stringify(body)} : {})});
-  const j = await r.json();
-  if (!r.ok) throw new Error(productText(j.error || '操作未完成'));
-  return j;
-}
 const time = value => new Date(value).toLocaleString('zh-CN', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
 const localInput = value => {const d=new Date(value);return new Date(d-d.getTimezoneOffset()*60000).toISOString().slice(0,16);};
 const statusNames = {draft:'待确认',pending:'待执行',sending:'发送中',paused:'已暂停',done:'已投递',cancelled:'已取消',failed:'发送失败',overdue:'已过期'};
@@ -69,14 +66,16 @@ function App() {
   const [extensionModules,setExtensionModules]=useState([]),[filesByAssistant,setFilesByAssistant]=useState({}),[stickersByAssistant,setStickersByAssistant]=useState({}),[voiceRequested,setVoiceRequested]=useState(false);
   const scroll=useRef(), lastNotification=useRef(''), dirty=useRef(false), activeRequest=useRef(null);
 
-  async function refresh() {
-    const [stateResult,deploymentResult,extensionsResult]=await Promise.allSettled([api('/state'),api('/deployment'),api('/extensions')]);
+  async function refresh({signal}={}) {
+    const options={signal};
+    const [stateResult,deploymentResult,extensionsResult]=await Promise.allSettled([api('/state','GET',undefined,options),api('/deployment','GET',undefined,options),api('/extensions','GET',undefined,options)]);
+    if(signal?.aborted)throw new DOMException('请求已停止','AbortError');
     if(extensionsResult.status==='fulfilled')setExtensionModules(extensionItems(extensionsResult.value));
     if(deploymentResult.status==='fulfilled')setDeployment(deploymentResult.value);
     if(stateResult.status==='rejected')throw stateResult.reason;
     const d=stateResult.value;setData(d);setFatal('');setConnectionError('');setCheckedAt(Date.now());return d;
   }
-  useEffect(()=>{refresh().catch(e=>setFatal(e.message));const id=setInterval(()=>refresh().catch(e=>setConnectionError(e.message)),2500);return()=>clearInterval(id);},[]);
+  useEffect(()=>{const connection=createConnectionRecovery({refresh,onStatus:state=>{if(state.error){setConnectionError(state.error);if(state.phase==='blocked')setFatal(state.error);}}});void connection.start();return()=>connection.stop();},[]);
   useEffect(()=>{sessionStorage.setItem('personal-agent-view',JSON.stringify({page,assistantId,chatId}));},[page,assistantId,chatId]);
   useEffect(()=>{setVoiceRequested(false);},[assistantId,deployment?.mode,deployment?.cloud?.url]);
   useEffect(()=>{setFilesByAssistant({});setStickersByAssistant({});},[deployment?.mode,deployment?.cloud?.url]);
@@ -100,11 +99,12 @@ function App() {
   function editAssistant(a) {leave(()=>{setEditor({...a});setPage('assistants');});}
 
   async function runChat(id,text,retry=false,extras={}) {
-    const requestId=crypto.randomUUID();activeRequest.current={chatId:id,requestId};setStream({chatId:id,text:'',parts:[],stage:'正在回复…'});
+    const requestId=newRequestId();activeRequest.current={chatId:id,requestId};setStream({chatId:id,text:'',parts:[],stage:'正在回复…'});
     let accepted=false,terminal=false;
     try {
-      const response=await fetch(`/api/chats/${id}/${retry?'retry/stream':'messages/stream'}`,{method:'POST',headers:{'X-Personal-Agent':'1','Content-Type':'application/json'},body:JSON.stringify({text,requestId,...extras})});
+      const response=await clientFetch(`/api/chats/${id}/${retry?'retry/stream':'messages/stream'}`,{method:'POST',body:JSON.stringify({text,requestId,...extras})});
       if(!response.ok){const e=await response.json();throw new Error(e.error || '发送失败');}
+      if(response.headers.get('content-type')?.includes('application/json')){const result=await response.json();if(!result.duplicate)throw Error('后台没有返回有效回复');accepted=true;setMessage('');await refresh();return;}
       accepted=true;if(!retry){setMessage('');if(extras.fileIds?.length)setFilesByAssistant(previous=>({...previous,[assistantId]:(previous[assistantId]||[]).filter(item=>!extras.fileIds.includes(item.id))}));if(extras.stickerIds?.length)setStickersByAssistant(previous=>({...previous,[assistantId]:(previous[assistantId]||[]).filter(item=>!extras.stickerIds.includes(item.id))}));setVoiceRequested(false);}await refresh();
       const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';
       const consume=async block=>{
@@ -116,8 +116,8 @@ function App() {
       };
       while(true){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});let pos;while((pos=buffer.indexOf('\n\n'))!==-1){await consume(buffer.slice(0,pos));buffer=buffer.slice(pos+2);}}
       if(buffer.trim())await consume(buffer);
-      if(!terminal)throw new Error('回复连接中断，请检查后台后重试');
-    }catch(e){setToast(e.message);if(accepted)await refresh().catch(()=>{});}
+      if(!terminal)throw new Error('连接暂时中断，后台会继续回复。重新连接后可查看结果。');
+    }catch(e){setToast(accepted?'连接暂时中断，后台会继续回复。重新连接后可查看结果。':e.message);if(accepted)await refresh().catch(()=>{});}
     finally{activeRequest.current=null;setStream(null);setSending(false);}
   }
   async function send(e) {
@@ -266,4 +266,10 @@ function TaskCreateForm({assistants,assistantId,channels,busy,onSubmit,onCancel}
   return <form onSubmit={onSubmit}><label>提醒内容<input name="title" required maxLength="100" placeholder="例如：领取活动奖励"/></label><label>执行时间<input type="datetime-local" name="dueAt" required defaultValue={localInput(Date.now()+1800000)}/></label><label>所属助手<select name="assistantId" value={selected} onChange={e=>{setSelected(e.target.value);setChannel('web');}}>{assistants.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></label><label>接收位置<select name="channel" value={channel} onChange={e=>setChannel(e.target.value)}><option value="web">应用收件箱</option>{channels.filter(c=>c.assistantId===selected&&c.enabled&&c.target&&c.supportProactive&&c.status==='verified').map(c=><option key={c.id} value={c.id}>{c.name}（已确认收到测试）</option>)}</select></label><p className="small muted">先保存草稿，确认后执行。外部接收位置需先在消息渠道中完成发送测试并确认收到。</p><div className="modal-actions"><Button secondary type="button" onClick={onCancel}>取消</Button><Button disabled={busy}>保存草稿</Button></div></form>;
 }
 
-createRoot(document.getElementById('root')).render(<App/>);
+function ClientRoot(){
+  const force=new URLSearchParams(location.search).get('mobile')==='1',desktop=document.documentElement.dataset.shell==='desktop';
+  const [mobile,setMobile]=useState(()=>force||!desktop&&matchMedia('(max-width:680px)').matches);
+  useEffect(()=>{const query=matchMedia('(max-width:680px)'),update=()=>setMobile(force||!desktop&&query.matches);query.addEventListener('change',update);return()=>query.removeEventListener('change',update);},[force,desktop]);
+  return mobile?<MobileApp/>:<App/>;
+}
+createRoot(document.getElementById('root')).render(<ClientRoot/>);

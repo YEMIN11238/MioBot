@@ -5,6 +5,7 @@ import {AssistantLibrary} from './FileAttachmentPicker.jsx';
 import {PrivateMedia} from './ExtensionMedia.jsx';
 import {bundledCapability} from './bundled-ui.mjs';
 import './extensions-panel.css';
+import CloudPluginBundles from './CloudPluginBundles.jsx';
 
 const details={
   memory:{title:'手动记忆',description:'保存、编辑与共享你允许记住的资料。',icon:BookOpen},
@@ -16,9 +17,9 @@ const details={
 };
 
 export default function ExtensionsPanel({data,initialItems=[],assistantId,onRefresh,onDirty,onNotice,onError,onNavigate}){
-  const [items,setItems]=useState(initialItems),[selected,setSelected]=useState(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[editorDirty,setEditorDirty]=useState(false);
+  const [items,setItems]=useState(initialItems),[selected,setSelected]=useState(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[editorDirty,setEditorDirty]=useState(false),[bundleDirty,setBundleDirty]=useState(false);
   const dirtyRef=useRef(onDirty);dirtyRef.current=onDirty;
-  useEffect(()=>{dirtyRef.current?.(editorDirty);},[editorDirty]);
+  useEffect(()=>{dirtyRef.current?.(editorDirty||bundleDirty);},[editorDirty,bundleDirty]);
   useEffect(()=>()=>dirtyRef.current?.(false),[]);
   useEffect(()=>{setItems(initialItems);},[initialItems]);
   async function load(signal){const list=extensionItems(await extensionRequest('/extensions','GET',undefined,signal));if(!signal?.aborted)setItems(list);return list;}
@@ -31,6 +32,7 @@ export default function ExtensionsPanel({data,initialItems=[],assistantId,onRefr
   return <div className="page extensions-page"><header className="page-header"><div><h1>扩展中心</h1><p>按需要为助手添加声音、表情和资料。</p></div><button type="button" className="cs-button is-secondary" disabled={busy} onClick={reload}><RefreshCw size={15}/>检查状态</button></header>
     <h2 className="optional-extensions-title">可选扩展</h2>{error&&<p className="extension-error" role="alert">{error}</p>}
     <div className={'extensions-layout '+(chosen?'with-editor':'')}><div className="extensions-card-grid">{optional.map((item,index)=>{const meta=details[item.id],Icon=meta.icon;return <section className={'extension-module-card '+(selected===item.id?'is-selected':'')} key={item.id}><div className="extension-module-heading"><span className={'mini-icon tint-'+index%3}><Icon size={25}/></span><div><h2>{meta.title}</h2><p>{meta.description}</p></div></div><div className="extension-module-status"><span>{extensionStateLabel(item)}</span><label><input type="checkbox" aria-label={'启用'+meta.title} checked={item.enabled===true} disabled={busy||editorDirty||item.installed!==true} onChange={event=>toggle(item,event.target.checked)}/><span className="sr-only">{meta.title}开关</span></label></div>{item.error&&<p className="extension-error">{item.error}</p>}<button type="button" className="extension-configure" onClick={()=>select(item.id)}>配置与管理<ChevronRight size={15}/></button></section>;})}<section className="extension-module-card"><div className="extension-module-heading"><span className="mini-icon"><Globe size={25}/></span><div><h2>游戏资料工具</h2><p>可在游戏助手的设置中选择游戏工具，按自己的需求扩展。</p></div></div><button type="button" className="extension-configure" onClick={()=>onNavigate?.('assistants')}>管理助手<ChevronRight size={15}/></button></section></div>{chosen&&<aside className="extension-configuration"><ExtensionEditor key={chosen.id} item={chosen} assistants={data.assistants||[]} modelConnections={data.modelConnections||[]} initialAssistantId={assistantId} onSave={payload=>save(chosen,payload)} onDirty={setEditorDirty} onRefresh={onRefresh} onNotice={onNotice} onError={onError} onNavigate={onNavigate}/></aside>}</div>
+    <CloudPluginBundles data={data} onDirty={setBundleDirty} onNavigate={onNavigate} onRefresh={onRefresh} onNotice={onNotice}/>
     <div className="extension-channels-link"><div><strong>消息接收渠道</strong><p>需要在 QQ、Discord 等平台聊天时，再连接自己的账号。</p></div><button type="button" className="cs-button is-secondary" onClick={()=>onNavigate?.('settings','channels')}><Link2 size={15}/>管理消息渠道</button></div></div>;
 }
 
