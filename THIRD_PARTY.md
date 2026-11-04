@@ -2,7 +2,7 @@
 
 ## Optional deployed-bot plugin bundles (0.7.0)
 
-Nine source bundles were audited read-only from the owner's existing deployment on 2026-11-04 and adapted for managed, explicitly enabled QQ channels. Original authors, licenses, source checksums and modifications are retained in each `integrations/cloud-plugins/<id>/NOTICE.md` and `PROVENANCE.json`. No credentials, account sessions, private media or preexisting plugin databases are distributed.
+Nine source bundles were audited read-only from the owner's existing deployment on 2026-11-04 and adapted for managed, explicitly enabled QQ channels. Original authors, licenses, source checksums and modifications are retained in each `integrations/cloud-plugins/<id>/NOTICE.md` and its `PROVENANCE.json` or `CLOUD_SOURCE.json`. No credentials, account sessions, private media or preexisting plugin databases are distributed.
 
 - Seed Audio TTS and dafeiyu_sing — configuration-pack authors, MIT.
 - dafeiyu_signature — zexuan604, MIT from its containing configuration pack.
