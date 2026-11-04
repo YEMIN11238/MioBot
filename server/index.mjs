@@ -25,13 +25,15 @@ import {applyUserMemory,memoryReceiptPrompt} from './builtin-memory.mjs';
 import {DeviceSessions,parseCookie,cookieHeader,removeCookie} from './device-sessions.mjs';
 import {DeviceNetwork,sameDeviceOrigin} from './device-network.mjs';
 import {requestIdentity,personalRoute} from './device-access.mjs';
+import {CloudPluginBundles} from './cloud-plugin-bundles.mjs';
 
 export const projectRoot=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 
 export async function startServer({root=projectRoot,dataRoot=join(root,'.data'),port=4318,host='127.0.0.1',cloudMode=false,cloudToken='',serverName='MioBot 云端',dev=false,onNotify=()=>{},fetcher=fetch,sharingPort=4319}={}){
   const store=new Store(dataRoot),runtime=new AstrBot({root,store,fetcher}),connections=new Connections(store,runtime),runs=new Map(),scheduler=new Scheduler(store,{onNotify,deliver:t=>{const c=store.channel(t.channel);if(c.assistantId!==t.assistantId||c.status!=='verified'||!c.enabled||!c.supportProactive||!c.target)throw new Error('提醒接收渠道未通过验证');return connections.send(c.id,t.title);}});scheduler.recover();
-  const care=new CareScheduler(store,runtime,{onNotify,isBusy:id=>runs.has(id),deliver:async(assistant,channelId,text)=>{const channel=store.channel(channelId);if(channel.assistantId!==assistant.id||channel.status!=='verified'||!channel.enabled||!channel.supportProactive)throw Error('主动关心接收渠道未通过验证');return connections.send(channelId,text);}});
+  const care=new CareScheduler(store,runtime,{onNotify,isBusy:id=>runs.has(id)||cloudPlugins.changing,deliver:async(assistant,channelId,text)=>{const channel=store.channel(channelId);if(channel.assistantId!==assistant.id||channel.status!=='verified'||!channel.enabled||!channel.supportProactive)throw Error('主动关心接收渠道未通过验证');return connections.send(channelId,text);}});
   const deployment=new Deployment({store,runtime,isBusy:()=>runs.size>0||care.running.size>0,fetcher,cloudMode}),extensions=new Extensions({store,runtime});
+  const cloudPlugins=new CloudPluginBundles({root,store,runtime,isBusy:()=>runs.size>0||care.running.size>0});
   const devices=new DeviceSessions({store});let deviceNetwork;
   const syncBundled=()=>{if(applyBundledCapabilities(store).changed)store.save();};
   syncBundled();
@@ -44,6 +46,7 @@ export async function startServer({root=projectRoot,dataRoot=join(root,'.data'),
   const json=(res,status,data)=>{if(res.destroyed||res.writableEnded)return;res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));};
   const body=async(req,limit=256000)=>{let chunks=[],size=0;for await(const chunk of req){size+=chunk.length;if(size>limit)throw new Error('提交内容过大');chunks.push(chunk);}try{return chunks.length?JSON.parse(Buffer.concat(chunks).toString()):{};}catch{throw Error('提交内容需要有效的JSON格式');}};
   const runChat=async(c,b,res,{stream=false,retry=false,viewerDeviceId=null}={})=>{
+    if(cloudPlugins.changing)throw new Error('正在更新内置组件，请稍后再发送消息。');
     syncBundled();
     if(c.origin==='channel')throw Error('这是外部渠道的执行记录，请在原聊天渠道继续交谈，或新建应用内对话。');
     if(b.requestId!==undefined&&(typeof b.requestId!=='string'||!b.requestId.trim()||b.requestId.length>100))throw Error('消息请求编号无效');
@@ -153,6 +156,9 @@ export async function startServer({root=projectRoot,dataRoot=join(root,'.data'),
     if(path==='/api/cloud/info'&&method==='GET')return json(res,200,{product:'MioBot',apiVersion:1,version,instanceId:store.state.instanceId,name:serverName});
     if(path==='/api/state'&&method==='GET'){syncBundled();return json(res,200,{...store.snapshot(),bundledCapabilities:bundledCapabilityStatus(store,runtime),runtime:{status:runtime.status,error:runtime.error,installed:runtime.isInstalled()}});}
     const b=['POST','PATCH','PUT','DELETE'].includes(method)?await body(req,(path==='/api/files'||path==='/api/stickers/upload')?16*1024*1024:256000):{};
+    if(path==='/api/bundled-plugins'&&method==='GET')return json(res,200,await cloudPlugins.list());
+    const bundledPlugin=path.match(/^\/api\/bundled-plugins\/([a-z_]+)$/);
+    if(bundledPlugin&&method==='PATCH')return json(res,200,await cloudPlugins.patch(bundledPlugin[1],b));
     if(method==='PATCH'&&/^\/api\/extensions\/(memory|reminders|web)$/.test(path)&&b.enabled===false)return json(res,409,{error:'这些基础能力已内置并自动管理。可单独管理记忆、提醒和搜索服务。'});
     const extResult=await extensions.route({path,method,body:b,query:url.searchParams});if(extResult){if(extResult.bytes){res.writeHead(extResult.status,{'Content-Type':extResult.mime,'Cache-Control':'private, no-store','Content-Disposition':'inline; filename="'+extResult.filename+'"'});res.end(extResult.bytes);return;}return json(res,extResult.status,{...extResult.body,...(method==='PATCH'&&path.startsWith('/api/extensions/')?{syncWarnings:await connections.refreshBindings()}:{} )});}
     if(path==='/api/capabilities/personality/check'&&method==='POST'){
@@ -193,7 +199,7 @@ export async function startServer({root=projectRoot,dataRoot=join(root,'.data'),
       if(!action&&method==='DELETE'){if(store.state.tasks.some(t=>t.channel===id&&['pending','sending'].includes(t.status)))throw new Error('这个渠道仍有待发送任务，请先暂停或取消');if(c.nativeId){await runtime.authenticate();await runtime.request('/bots/by-id?bot_id='+encodeURIComponent(c.nativeId),{method:'DELETE'});}store.state.channels=store.state.channels.filter(x=>x.id!==id);delete store.secrets.channels[id];store.setSecrets({});store.save();return json(res,200,{ok:true});}
       if(action==='connect'&&method==='POST')return json(res,200,await connections.connect(id));
       if(action==='test-send'&&method==='POST')return json(res,200,await connections.send(id,b.text||'MioBot 渠道连接测试，请确认是否收到。',{test:true}));
-      if(action==='confirm-received'&&method==='POST'){if(c.status!=='sent')throw new Error('请先执行一次测试发送，再本人确认收到');c.status='verified';c.verifiedAt=new Date().toISOString();store.save();return json(res,200,c);}
+      if(action==='confirm-received'&&method==='POST'){if(c.status!=='sent')throw new Error('请先执行一次测试发送，再本人确认收到');c.status='verified';c.verifiedAt=new Date().toISOString();store.save();if(Object.values(store.state.cloudPlugins||{}).some(p=>p.enabled&&p.channelId===c.id))await runtime.syncChannel(c);return json(res,200,c);}
       if(action==='status'&&method==='GET'){await runtime.authenticate();const catalog=await connections.channels(),type=catalog.types.find(x=>x.type===c.type);c.supportProactive=type?.supportProactive===true;c.supportStreaming=type?.supportStreaming===true;store.save();return json(res,200,{channel:c,stats:await runtime.request('/bots/stats')});}
     }
     if(path==='/api/assistants'&&method==='POST'){if(b.defaultConnectionId)store.connection(b.defaultConnectionId);const kind=['daily','game','career'].includes(b.kind)?b.kind:'daily';const a={id:randomUUID(),name:boundedText(b.name,'名称',30),description:typeof b.description==='string'?b.description.slice(0,100):'你的专属助手',persona:boundedText(b.persona||ASSISTANT_PRESETS[kind].persona,'角色设定',10000),kind,enabled:true,defaultConnectionId:b.defaultConnectionId||null,skills:[...new Set([...(b.skills?validateSkills(b.skills,kind):ASSISTANT_PRESETS[kind].skills),...BASE_SKILLS])],care:validateCare(b.care||{},kind),presetRevision:2};store.state.assistants.push(a);store.save();return json(res,201,a);}

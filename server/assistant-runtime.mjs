@@ -1,6 +1,7 @@
 import {cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
+import {stageCloudPluginBundles} from './cloud-plugin-bundles.mjs';
 
 export const MEMORY_PLUGIN='astrbot_plugin_livingmemory';
 export const TASK_PLUGIN='astrbot_plugin_miobot_tasks';
@@ -93,7 +94,7 @@ function stageDirectory(source,target,{bundleId,version}){
 }
 
 /** Only the managed instance's data tree is written. User databases are never copied. */
-export function stageBundledCapabilities({root,runtimeRoot,instanceId}){
+export function stageBundledCapabilities({root,runtimeRoot,instanceId,store}){
   const plugins=join(runtimeRoot,'data/plugins'),configDir=join(runtimeRoot,'data/config');
   mkdirSync(plugins,{recursive:true,mode:0o700});mkdirSync(configDir,{recursive:true,mode:0o700});
   const memorySource=join(root,'integrations/livingmemory',MEMORY_PLUGIN);
@@ -122,6 +123,7 @@ export function stageBundledCapabilities({root,runtimeRoot,instanceId}){
       writeFileSync(file,JSON.stringify(deepMerge(schemaDefaults(schema),patch),null,2)+'\n',{mode:0o600});
     }
   }
+  if(store)installed.push(...stageCloudPluginBundles({root,runtimeRoot,store}));
   return installed;
 }
 

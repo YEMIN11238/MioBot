@@ -1,0 +1,65 @@
+{
+  "banshi_interval": {
+    "type": "int",
+    "default": 30,
+    "description": "搬史间隔, 单位: 秒"
+  },
+  "banshi_cache_seconds": {
+    "type": "int",
+    "default": 3600,
+    "description": "消息缓存时间限制, 也是转发前检查历史消息的时间窗口 (秒)"
+  },
+  "banshi_cooldown_day_seconds": {
+    "type": "int",
+    "default": 600,
+    "description": "动态冷却：白天(09:00-01:00) 冷却秒数"
+  },
+  "banshi_cooldown_night_seconds": {
+    "type": "int",
+    "default": 3600,
+    "description": "动态冷却：夜间(01:00-09:00) 冷却秒数"
+  },
+  "banshi_cooldown_day_start": {
+    "type": "string",
+    "default": "09:00",
+    "description": "动态冷却：白天时段起始时间 (HH:MM)"
+  },
+  "banshi_cooldown_night_start": {
+    "type": "string",
+    "default": "01:00",
+    "description": "动态冷却：夜间时段起始时间 (HH:MM)"
+  },
+  "banshi_group_list": {
+    "type": "list",
+    "default": [],
+    "description": "史的来源群列表"
+  },
+  "banshi_target_list": {
+    "type": "list",
+    "default": [],
+    "description": "明确填写目标群白名单；MioBot中留空不转发"
+  },
+  "block_source_messages": {
+    "description": "是否屏蔽源群消息",
+    "type": "bool",
+    "hint": "开启后将屏蔽banshi_group_list中的群消息",
+    "default": false
+  },
+  "allowed_message_types": {
+    "type": "list",
+    "default": [
+      "text",
+      "image",
+      "video",
+      "forward"
+    ],
+    "description": "允许转发的消息类型",
+    "hint": "可选: text(文本), image(图片), video(视频), forward(聊天记录/合并转发)。如果消息包含未被允许的媒体类型，将被拒绝转发。",
+    "options": [
+      "text",
+      "image",
+      "video",
+      "forward"
+    ]
+  }
+}

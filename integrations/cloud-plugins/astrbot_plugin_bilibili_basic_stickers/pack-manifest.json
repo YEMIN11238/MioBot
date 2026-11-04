@@ -1,0 +1,38 @@
+{
+  "id": "bilibili-basic-tv",
+  "name": "B站基础表情 · 小电视",
+  "version": "1.0.0",
+  "description": "从B站公开基础小电视包按官方标签选取，用于主人QQ私聊测试。",
+  "categories": {
+    "affection": {
+      "description": "可爱、亲近、撒娇，B站小电视表情"
+    },
+    "angry": {
+      "description": "生气、假装气鼓鼓，B站小电视表情"
+    },
+    "confused": {
+      "description": "疑问、困惑、不明白，B站小电视表情"
+    },
+    "happy": {
+      "description": "开心、笑哭、好笑，B站小电视表情"
+    },
+    "reply": {
+      "description": "点赞、赞同、收到，B站小电视表情"
+    },
+    "sad": {
+      "description": "委屈、难过、哭泣，B站小电视表情"
+    },
+    "sigh": {
+      "description": "无语、白眼、轻轻嫌弃，B站小电视表情"
+    },
+    "sleep": {
+      "description": "困了、睡觉、晚安，B站小电视表情"
+    },
+    "teasing": {
+      "description": "调侃、坏笑、接梗、得意，B站小电视表情"
+    }
+  },
+  "upstream_url": "https://api.bilibili.com/x/emote/package?business=reply&ids=2",
+  "upstream_package_id": 2,
+  "original_artwork_source": "哔哩哔哩公开基础表情，原始图片不改绘、不重新声明版权"
+}

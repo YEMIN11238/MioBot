@@ -1,0 +1,48 @@
+{
+  "captured": "2026-11-04",
+  "source": "existing owner-managed AstrBot deployment; plugin source only",
+  "credentialsIncluded": false,
+  "userLibraryIncluded": false,
+  "files": [
+    {
+      "path": "requirements.txt",
+      "sha256": "53233e8dfbed17a27fb6404f34b68fe2a8d00d68c743c4e6f4ac073b2833bab2"
+    },
+    {
+      "path": "pack-manifest.json",
+      "sha256": "10495d1329fadb2db7be9e695b9d64676769551a0665471c0873ece5f15a0f13"
+    },
+    {
+      "path": "adapter.py",
+      "sha256": "fce947922c991d2ae329dd047a59ff1b6e4678f72d2f26b59999bfdf6bc2d219"
+    },
+    {
+      "path": "metadata.yaml",
+      "sha256": "92f9b46354aff153334dadd348525b2e45f59224421a67b4f32ead4f0db501f3"
+    },
+    {
+      "path": "__init__.py",
+      "sha256": "22f3e71612d9dd894f77f6f699e887c1ac85726817e709c0ddfde0a0c658dcfc"
+    },
+    {
+      "path": "core.py",
+      "sha256": "275b987f2b8776fb7f04a204bec64e8182ad15a2446244ce8709d865cf4f64cd"
+    },
+    {
+      "path": "README.md",
+      "sha256": "37eecfa4136d8966ac67e226b53e1621dd24d290a66796a5fbeb52abfa3a82ee"
+    },
+    {
+      "path": "_conf_schema.json",
+      "sha256": "c56e270910054c27d22077606675c698054c29973c0e549b8a9acc94e3a4c074"
+    },
+    {
+      "path": "catalog.json",
+      "sha256": "c79d7ae83445b763f0c1b33b9621ee4dd3f109342140f4e525599d99482f90f9"
+    },
+    {
+      "path": "main.py",
+      "sha256": "21b851b4ad4347cda8bc2d58bec71a40bdbe33f078c1aadd66fc08f5aceee178"
+    }
+  ]
+}

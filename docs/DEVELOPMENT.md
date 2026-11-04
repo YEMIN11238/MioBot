@@ -1,8 +1,12 @@
 # 开发、验证与构建
 
-本页面向运行源码和参与开发的使用者。MioBot 当前为 0.6.1 预览版；测试通过的范围、实际平台账号验收与正式发行应分别判断。
+本页面向运行源码和参与开发的使用者。MioBot 当前为 0.7.0 预览版；测试通过的范围、实际平台账号验收与正式发行应分别判断。
 
 ## 技术与目录
+
+0.7.0 对照实际云端12个插件目录，保留3项已有适配，新增9个默认关闭的源码组件及统一配置、精确QQ主人路由和加载管理。详见 [插件对照](CLOUD-PLUGIN-PARITY.md)。真实固定引擎中9组件同进程加载及工具注册通过，38项Python隔离检查通过。它们没有使用现用账号、模型凭据或付费调用，不代表真实QQ、声音或空间验收。
+
+原生检查入口为 `node scripts/cloud-plugins-native-smoke.mjs`，以及 `tests/helpers/cloud-voice-plugin-smoke.py`、`cloud-qq-plugin-smoke.py`、`cloud-stickers-smoke.py`、`cloud-learning-smoke.py`。Python脚本使用已准备的固定引擎环境执行；普通 `npm test` 不要求云端凭据。
 
 | 目录 | 职责 |
 | --- | --- |

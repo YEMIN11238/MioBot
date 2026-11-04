@@ -1,5 +1,20 @@
 # Third-party components
 
+## Optional deployed-bot plugin bundles (0.7.0)
+
+Nine source bundles were audited read-only from the owner's existing deployment on 2026-11-04 and adapted for managed, explicitly enabled QQ channels. Original authors, licenses, source checksums and modifications are retained in each `integrations/cloud-plugins/<id>/NOTICE.md` and `PROVENANCE.json`. No credentials, account sessions, private media or preexisting plugin databases are distributed.
+
+- Seed Audio TTS and dafeiyu_sing — configuration-pack authors, MIT.
+- dafeiyu_signature — zexuan604, MIT from its containing configuration pack.
+- qqprofile and qzone — Zhalslar, original licenses retained.
+- meme_manager and astrbot_sowing_discord — anka, original MIT licenses retained.
+- astrbot_plugin_self_learning — NickMo / EterUltimate, AGPL-3.0, original license retained.
+- astrbot_plugin_bilibili_basic_stickers — AIPM collector code, MIT; fixed public Bilibili asset references have separate source records.
+
+The bundles do not contain SnowLuma or QQ client software. Optional GPU singing-server sources are not activated by bundling; no model weights or personal reference audio are included. See [integration scope](docs/CLOUD-PLUGIN-PARITY.md) for defaults and validation limits.
+
+## Existing runtime and integrations
+
 - AstrBot v4.29.3 — https://github.com/AstrBotDevs/AstrBot — upstream revision f61a7f42696da6df25dc7a249ec9b8d54ed9da18. AGPL-3.0-or-later. The app uses the native desktop authentication and HTTP API. This is a **modified managed runtime**, not an unmodified upstream distribution: patch `miobot-managed-outbound-tools-v1` makes automatic `send_message_to_user` injection conditional on `MIOBOT_DISABLE_NATIVE_OUTBOUND_TOOLS`; MioBot sets this flag to `1`. Standalone AstrBot retains upstream behavior when that flag is absent. MioBot's synchronized configuration also disables native cron tools, keeping reminder confirmation and outbound delivery under the app's control. The reproducible patch is in `server/assistant-runtime.mjs` and `scripts/patch-managed-runtime.mjs`, and is applied during managed setup/packaging. The local source checkout, dependency lock generated during setup and packaging script are available with this project. The bundled runtime retains its original LICENSE.
 - LivingMemory 2.8.2 — https://github.com/lxfight-s-Astrbot-Plugins/astrbot_plugin_livingmemory — author lxfight; original AGPL v3 license retained in `integrations/livingmemory/astrbot_plugin_livingmemory/LICENSE`. The existing memory engine is bundled with a narrow integration hardening in `core/utils/__init__.py`: unresolved personas fail closed when MioBot sets `MIOBOT_REQUIRE_MEMORY_PERSONA=1`. Without that flag, the original behavior is retained. Eleven original translation/prompt resources omitted from the audited snapshot were restored from the upstream 2.8.2 release commit `a1e9c20a8c5fab93d6143f51be26fb1bbf8143ec`. Provenance, modifications and scope are recorded in `integrations/livingmemory/NOTICE.md`. No upstream runtime database, credentials or user memory are included.
 - PrismarineJS `minecraft-data` 3.119.0 — https://github.com/PrismarineJS/node-minecraft-data — MIT, as declared in the retained upstream package metadata. Underlying game data: https://github.com/PrismarineJS/minecraft-data. MioBot includes a selected offline Minecraft Java Edition 1.21.8 item/block/recipe snapshot, not a Minecraft game client or a live server.

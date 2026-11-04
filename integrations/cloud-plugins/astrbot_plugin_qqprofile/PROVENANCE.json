@@ -1,0 +1,29 @@
+{
+  "source": "existing owner cloud deployment plugin source snapshot",
+  "snapshotDate": "2026-11-04",
+  "originalVersion": "v1.1.6-owner-avatar.2",
+  "integrationRevision": "miobot.1",
+  "originalFileSha256": {
+    ".gitignore": "32dae3052f331ee34d628ef535709b301259a45df7c7522c4d35dcf49873f00b",
+    "CHANGELOG.md": "d7cf08b8824033904edf92ee47b7b439efe90a008368c5d04416c0152a6aa636",
+    "LICENSE": "f440d399276dcbd8a845dee6e873a54c1f59ff44b502b45f3bc9352224ed5789",
+    "README.md": "a6b9da90a565124139306ee0f4d526b2120a357d0af53ecc70f1a003e216a031",
+    "_conf_schema.json": "abeddb94be1a656e1251fc54afa657ef45353c71bd000bc2d318f42c753560bf",
+    "logo.png": "816dfceddec23e0d364dbb536a4939fcbf8535af6b6795bf43492e03732e45e8",
+    "main.py": "44ea9e31b3c8b2e469db4816b1d7c14cac542e8fa702d583ab8e8555844b4dd6",
+    "metadata.yaml": "2fe6f096dac20d65904a5e93e2f5754693d2eadb9571be25633524503dfe0f8c",
+    "status.py": "4e4637741d20c53f0f6fe357f53686c69da374b711904798606a9798cac535a7",
+    "utils.py": "8aa2680d52f71f4f5968775ff9c35bd5d9972c30d457c2af8d80490286f6fd5e"
+  },
+  "containsRuntimeData": false,
+  "managedEnvironmentFlag": "MIOBOT_MANAGED_CLOUD_PLUGINS=1",
+  "modifiedOriginalFiles": [
+    "main.py"
+  ],
+  "addedIntegrationFiles": [
+    "MIOBOT_DEFAULTS.json",
+    "NOTICE.md",
+    "PROVENANCE.json"
+  ],
+  "runtimeDataImported": false
+}

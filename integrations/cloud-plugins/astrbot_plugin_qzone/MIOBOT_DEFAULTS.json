@@ -1,0 +1,12 @@
+{
+  "manage_group": "",
+  "trigger": {
+    "publish_cron": "",
+    "comment_cron": "",
+    "read_prob": 0,
+    "send_admin": true,
+    "like_when_comment": false
+  },
+  "miobot_allow_scheduled_actions": false,
+  "miobot_enable_campus_wall": false
+}

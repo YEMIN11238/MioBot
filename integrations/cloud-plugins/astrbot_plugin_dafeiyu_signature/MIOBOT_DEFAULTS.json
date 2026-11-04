@@ -1,0 +1,7 @@
+{
+  "owner_session": "",
+  "self_change_hint": false,
+  "daily_self_limit": 2,
+  "daily_owner_limit": 10,
+  "max_length": 40
+}

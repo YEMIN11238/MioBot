@@ -1,0 +1,22 @@
+{
+  "source": "existing owner cloud deployment plugin source snapshot",
+  "snapshotDate": "2026-11-04",
+  "originalVersion": "v0.1.3",
+  "integrationRevision": "miobot.1",
+  "originalFileSha256": {
+    "_conf_schema.json": "6590f1e06349894efab0bb6926e8c28045df733e92b82632c185371f0ec1582d",
+    "main.py": "fead1bb4073f252ed7dec9231c20942255ac4b82db57f3d9b7abfc7ffe11db12",
+    "metadata.yaml": "37bcc21397cb3c40bfba0121513ce52d1a0e6a6bd8eda3f503b591aacca28cdf"
+  },
+  "containsRuntimeData": false,
+  "managedEnvironmentFlag": "MIOBOT_MANAGED_CLOUD_PLUGINS=1",
+  "modifiedOriginalFiles": [
+    "main.py"
+  ],
+  "addedIntegrationFiles": [
+    "MIOBOT_DEFAULTS.json",
+    "NOTICE.md",
+    "PROVENANCE.json"
+  ],
+  "runtimeDataImported": false
+}

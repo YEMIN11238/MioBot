@@ -1,0 +1,41 @@
+{
+  "owner_session": {
+    "type": "string",
+    "description": "允许控制和接收普通语音的主人私聊",
+    "hint": "完整 QQ 私聊会话 ID，格式为 渠道ID:FriendMessage:对方QQ号；仅此会话可控制和接收语音。",
+    "default": ""
+  },
+  "reply_mode": {
+    "type": "string",
+    "description": "普通回复方式",
+    "options": [
+      "text",
+      "voice",
+      "auto"
+    ],
+    "hint": "text 为文字，voice 为持续语音，auto 沿用提供商概率。自动及持续语音仍受原版会话 TTS 开关限制；明确的本次语音只覆盖当前一条，不改变保存模式。",
+    "default": "text"
+  },
+  "app_id": {
+    "type": "string",
+    "description": "豆包语音 APP ID",
+    "default": "",
+    "_secret": true
+  },
+  "access_key": {
+    "type": "string",
+    "description": "豆包语音 Access Token",
+    "default": "",
+    "_secret": true
+  },
+  "persona": {
+    "type": "string",
+    "description": "声音与语气描述",
+    "default": "轻快自然、清晰柔和，像熟人聊天，按原文朗读"
+  },
+  "reply_probability": {
+    "type": "float",
+    "description": "auto 模式下随机语音概率（0 到 1）",
+    "default": 0.08
+  }
+}

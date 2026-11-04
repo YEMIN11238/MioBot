@@ -1,0 +1,43 @@
+{
+  "source": "Read-only export from the owner's existing AstrBot cloud deployment",
+  "sourceDate": "2026-11-04",
+  "sourcePackage": "https://github.com/zexuanw958-svg/dafeiyu-config-pack",
+  "sourcePackageRevision": "8c01b0361b8a4baff5be3d2bc67ed55108953086",
+  "license": "MIT",
+  "licenseSource": "dafeiyu-config-pack/LICENSE",
+  "integrationVersion": "v0.2.3-owner-control-miobot.1",
+  "containsCredentials": false,
+  "containsUserAudio": false,
+  "containsUserState": false,
+  "excluded": [
+    "sing_server/voice/",
+    "__pycache__/",
+    "*.pyc"
+  ],
+  "files": {
+    "LICENSE": {
+      "sha256": "158a9cfa16972b8c1c5c167287922b8c54f62a9ea92ae628d58d06cb0ffb80d7",
+      "cloudSourceSha256": "158a9cfa16972b8c1c5c167287922b8c54f62a9ea92ae628d58d06cb0ffb80d7"
+    },
+    "README.md": {
+      "sha256": "273297d74184b12637b443eccb10ebb59a927fbdcf7dcaf0aa8c0504a582aba0",
+      "cloudSourceSha256": "6e2e3d859850908e481183745d90f0ab70113a5b5e8a620b9b609d7373e7aa79"
+    },
+    "_conf_schema.json": {
+      "sha256": "593bc6dfd4a41658a9f1abb8647a73f8bbbe7c9aca1a47207d4d5beb98ffe004",
+      "cloudSourceSha256": "a32c5930a69996e5a4b40b88cdf1746496d238d46224745892932b74cdf997cc"
+    },
+    "main.py": {
+      "sha256": "a19d7508f9402b64fad07c7b1e0400b88d5fd9b32516c0dfe09fc289b5233f4a",
+      "cloudSourceSha256": "01ff13de39d8ff71cbc643ac7b7d5a046817391981d986c1121778620b6d2736"
+    },
+    "metadata.yaml": {
+      "sha256": "66f5b5aa945cb6b37878be2b11352267c95a81820f236ebc405c0bf843862eb3",
+      "cloudSourceSha256": "24649bd205e7c05072f2a3d4f9be93224edbc10307fdff786108911c69506250"
+    },
+    "voice_policy.py": {
+      "sha256": "1f017c3b07fdd4f3d9d36c913496217f18f682ef3ab581c6b63900f16f7f0cdd",
+      "cloudSourceSha256": "1f017c3b07fdd4f3d9d36c913496217f18f682ef3ab581c6b63900f16f7f0cdd"
+    }
+  }
+}
