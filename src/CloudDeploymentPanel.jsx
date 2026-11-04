@@ -3,6 +3,7 @@ import {Check,ChevronDown,Cloud,Copy,Download,Link2,LoaderCircle,Monitor,Refresh
 import {productText} from '../shared/product-text.mjs';
 import {cloudDraftError} from './deployment-state.mjs';
 import './cloud-deployment.css';
+import DevicePairingPanel from './DevicePairingPanel.jsx';
 
 async function deploymentRequest(path,body){
   const response=await fetch('/api/deployment'+path,{method:body===undefined?'GET':'POST',headers:{'X-Personal-Agent':'1','Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});
@@ -74,5 +75,6 @@ export default function CloudDeploymentPanel({deployment,onChanged,onDirty,onErr
     <header><span className="cloud-deployment-icon">{cloudMode?<Cloud size={25}/>:<Monitor size={25}/>}</span><div><h2>让助手持续运行</h2><p>选择完整后台的位置，聊天、记忆、提醒和主动关心一起运行。</p></div><span className={'cloud-deployment-status '+(connected?'is-online':cloudMode?'is-offline':'')}>{cloudMode?connected?'云端已连接':'云端暂时不可用':'当前在本机'}</span></header>
     <div className="cloud-deployment-summary"><strong>{cloudMode?(cloud.instanceName||cloud.serverName||'我的云端后台'):'这台电脑'}</strong><p>{cloudMode?'任务由云端执行，关闭这台电脑不会停止云端后台。云端服务本身需保持运行。':'本机运行需要保持电脑和应用开启。连接完整云端后台后，电脑可以关机。'}</p>{cloudMode&&!cloud.online&&<p role="alert">目前无法读取云端最新状态；显示的旧记录不能当作任务已完成。你仍可在这里重新连接或切回本机。</p>}{state?.localTasksPaused&&<p>切换前的本地待办已暂停，主动关心已关闭；原数据保留，没有自动迁移到云端。</p>}</div>
     <DeploymentGuide onNotice={onNotice}/><div className="cloud-deployment-form"><h3>{cloudMode?'管理云端连接':'连接我的云端后台'}</h3><p>先在服务器安装 MioBot 服务端，再填写服务地址和连接密钥。这里不会购买服务器，也不会自动迁移当前助手、聊天、记忆或 API 密钥。</p><label>云端服务地址<input aria-label="云端服务地址" value={url} onChange={event=>{setUrl(event.target.value);setError('');}} placeholder="https://你的云端服务地址" autoComplete="url" spellCheck={false}/></label><label>连接密钥<input aria-label="云端连接密钥" type="password" autoComplete="new-password" value={token} onChange={event=>{setToken(event.target.value);setError('');}} placeholder={sameSaved?'已保存；留空保留':'只在这里填写，不会回显'}/></label><small><ShieldCheck size={13}/>密钥只用于连接你的后台，不会展示在页面或带进聊天。</small>{(error||cloud.error)&&<p className="cloud-deployment-error" role="alert">{error||productText(cloud.error)}</p>}<div className="cloud-deployment-actions"><button type="button" className="cs-button" disabled={busy||!url.trim()} onClick={connect}>{busy?<LoaderCircle size={15} className="spin"/>:<Link2 size={15}/>}验证并连接云端</button><button type="button" className="cs-button is-secondary" disabled={busy} onClick={reload}><RefreshCw size={15}/>检查连接</button>{cloudMode&&<button type="button" className="cs-button is-secondary" disabled={busy} onClick={useLocal}><Monitor size={15}/>切回本机运行</button>}</div></div>
+    <DevicePairingPanel deployment={state} onNotice={onNotice}/>
   </section>;
 }

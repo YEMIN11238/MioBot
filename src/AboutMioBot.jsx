@@ -1,10 +1,14 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {ChevronDown,ExternalLink,FileText,LoaderCircle,X} from 'lucide-react';
 import appIcon from '../assets/app-icon.png';
+import packageInfo from '../package.json';
 import './about-miobot.css';
 
-const VERSION='0.5.0';
+const VERSION=packageInfo.version;
 const components=[
+  {name:'T3 Code 连接重试适配',version:'8b44f42',author:'T3 Tools Inc.',license:'MIT',file:'T3-Code-MIT.txt',notice:'T3-Code-INTEGRATION-NOTICE.txt',url:'https://github.com/pingdotgg/t3code',note:'复用连接重试函数；MioBot 自行适配手机页面、设备授权和 HTTP 状态恢复，不包含 T3 官方云服务。'},
+  {name:'QRCode',version:'1.5.4',author:'Ryan Day、Vincenzo Greco 及贡献者',license:'MIT',file:'QRCode-MIT.txt',url:'https://github.com/soldair/node-qrcode',note:'在本机生成一次性手机配对二维码。'},
+  {name:'dijkstrajs',author:'Thomas Cort、Wyatt Baldwin 及贡献者',license:'MIT',file:'DijkstraJS-MIT.txt',url:'https://github.com/tcort/dijkstrajs',note:'二维码编码所用的路径计算依赖。'},
   {name:'AstrBot（修改版）',version:'4.29.3',author:'AstrBotDevs 及贡献者',license:'AGPL-3.0-or-later',file:'AstrBot-AGPL-3.0.txt',url:'https://github.com/AstrBotDevs/AstrBot',note:'托管运行时保留上游来源，并包含 MioBot 的消息权限适配。'},
   {name:'LivingMemory',version:'2.8.2',author:'lxfight 及贡献者',license:'AGPL-3.0',file:'LivingMemory-AGPL-3.0.txt',url:'https://github.com/lxfight-s-Astrbot-Plugins/astrbot_plugin_livingmemory',notice:'LivingMemory-INTEGRATION-NOTICE.txt',note:'长期记忆组件；已适配人格隔离。'},
   {name:'Humanizer',version:'4.1.9 · miobot.1',author:'SIiOC 及贡献者',license:'AGPL-3.0',file:'Humanizer-AGPL-3.0.txt',url:'https://github.com/SIiOC/astrbot-plugin-humanizer',notice:'Humanizer-INTEGRATION-NOTICE.txt',note:'聊天风格与时间感知组件；保留原作者和规则来源说明。'},
@@ -41,7 +45,7 @@ export default function AboutMioBot({onClose}){
     <div className="mio-about-identity"><img src={appIcon} alt="MioBot" width="74" height="74"/><div><h2>MioBot</h2><span>版本 {VERSION} · 本地测试版</span></div></div>
     <p className="mio-about-description">让助手、对话、记忆和任务，都有一个清楚好用的入口。</p>
     <div className="mio-about-product-license"><span>MioBot 项目许可 · AGPL-3.0-only</span><button type="button" onClick={()=>open('MioBot 项目许可证','MioBot-AGPL-3.0.txt')}><FileText size={14}/>查看许可</button></div>
-    <details className="mio-about-components"><summary><span>开源组件与许可</span><ChevronDown size={15}/></summary><p className="mio-about-source-note">MioBot 基于以下开源项目进行整合与适配，保留原作者署名、许可证与修改说明。本地测试版源码及构建脚本随项目保留，公共仓库尚未发布。</p><ul>{components.map(item=><li key={item.name}><div className="mio-about-component-heading"><strong>{item.name}</strong>{item.version&&<span>{item.version}</span>}</div><small>{item.author}</small>{item.note&&<p>{item.note}</p>}<div className="mio-about-component-links"><button type="button" onClick={()=>open(item.name+' · '+item.license,item.file)}><FileText size={12}/>{item.license}</button><a href={item.url} target="_blank" rel="noreferrer"><ExternalLink size={12}/>项目来源</a>{item.notice&&<button type="button" onClick={()=>open(item.name+' · 整合与修改说明',item.notice)}>修改说明</button>}</div></li>)}</ul><button className="mio-about-all-notices" type="button" onClick={()=>open('完整第三方组件说明','THIRD-PARTY-NOTICES.txt')}><FileText size={14}/>查看完整第三方说明</button></details>
+    <details className="mio-about-components"><summary><span>开源组件与许可</span><ChevronDown size={15}/></summary><p className="mio-about-source-note">MioBot 基于以下开源项目进行整合与适配，保留原作者署名、许可证与修改说明。源码和构建脚本公开于 GitHub 的 YEMIN11238/MioBot 仓库。</p><ul>{components.map(item=><li key={item.name}><div className="mio-about-component-heading"><strong>{item.name}</strong>{item.version&&<span>{item.version}</span>}</div><small>{item.author}</small>{item.note&&<p>{item.note}</p>}<div className="mio-about-component-links"><button type="button" onClick={()=>open(item.name+' · '+item.license,item.file)}><FileText size={12}/>{item.license}</button><a href={item.url} target="_blank" rel="noreferrer"><ExternalLink size={12}/>项目来源</a>{item.notice&&<button type="button" onClick={()=>open(item.name+' · 整合与修改说明',item.notice)}>修改说明</button>}</div></li>)}</ul><button className="mio-about-all-notices" type="button" onClick={()=>open('完整第三方组件说明','THIRD-PARTY-NOTICES.txt')}><FileText size={14}/>查看完整第三方说明</button></details>
     {document&&<section ref={viewer} tabIndex={-1} className="mio-about-license-view" aria-label="许可文件内容"><div><h3>{document.title}</h3><button type="button" aria-label="收起许可内容" onClick={()=>setDocument(null)}><X size={16}/></button></div>{loading?<p role="status"><LoaderCircle size={15} className="spin"/>正在读取许可…</p>:error?<p role="alert">{error}</p>:<pre tabIndex={0}>{text}</pre>}</section>}
     {onClose&&<div className="mio-about-footer"><button type="button" onClick={onClose}>完成</button></div>}
   </div>;

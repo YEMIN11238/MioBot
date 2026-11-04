@@ -1,0 +1,33 @@
+{
+  "project": "T3 Code",
+  "repository": "https://github.com/pingdotgg/t3code",
+  "revision": "8b44f42b14c8e273156474a924ccf29680dd7857",
+  "license": "MIT",
+  "copyright": "Copyright (c) 2026 T3 Tools Inc.",
+  "reviewedOn": "2026-11-04",
+  "source": {
+    "path": "packages/client-runtime/src/connection/supervisor.ts",
+    "gitBlobSha": "5f279edf568c430c7dcb05365f9ce2febcb8f83e",
+    "url": "https://github.com/pingdotgg/t3code/blob/8b44f42b14c8e273156474a924ccf29680dd7857/packages/client-runtime/src/connection/supervisor.ts",
+    "retainedExcerpt": "upstream/supervisor-retry.ts",
+    "excerptSha256": "8f9336b1bf8ce87d22f4265cf96f8fae0549a41c12380d7eb6abcf8709292754"
+  },
+  "licenseFile": {
+    "path": "LICENSE",
+    "sha256": "fc800ae3e2c8e200cf1d1ad023ce57df01887005482646d8337ff25e1feafaf5"
+  },
+  "adaptedTargets": [
+    "src/connection-recovery.mjs"
+  ],
+  "reusedCode": [
+    "retryDelayMs function with TypeScript annotations removed",
+    "RETRY_BASE_DELAY_MS and RETRY_MAX_DELAY_MS constants"
+  ],
+  "newIntegrationCode": [
+    "src/client-api.mjs",
+    "MioBot HTTP polling and lifecycle controller in src/connection-recovery.mjs"
+  ],
+  "containsUserData": false,
+  "installsT3ProviderRuntime": false,
+  "connectsToT3Cloud": false
+}

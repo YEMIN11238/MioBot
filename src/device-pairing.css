@@ -1,0 +1,17 @@
+.device-pairing-panel{margin-top:24px;padding:26px;border:1px solid #e9e1f5;border-radius:22px;background:#fff;color:#35264b}
+.device-pairing-panel>header{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.device-pairing-panel h2{margin:0 0 5px;font-size:20px}.device-pairing-panel h3{font-size:16px;margin:20px 0 12px}
+.device-pairing-panel p{margin:5px 0;color:#82758f;font-size:13px;line-height:1.7}
+.device-pairing-icon{width:52px;height:52px;display:grid;place-items:center;background:#f0e9fb;color:#8861c3;border-radius:17px;flex-shrink:0}
+.device-sharing-row{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:16px;background:#faf8fd;border-radius:14px}
+.device-sharing-row>div{min-width:0}.device-sharing-row button{flex-shrink:0}
+.device-pairing-create{margin-top:16px}.device-pairing-address{overflow-wrap:anywhere;font-family:ui-monospace,monospace}
+.device-pairing-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.device-pairing-result{display:flex;align-items:center;gap:24px;padding:18px 0}.device-pairing-result img{width:180px;height:180px;flex-shrink:0}
+.device-pairing-code{display:flex;align-items:center;gap:14px;min-height:46px;padding:10px 16px;margin:12px 0;border:1px solid #ded1f3;background:#f6f1fc;border-radius:12px;color:#674592;cursor:pointer}
+.device-pairing-code span{font-family:ui-monospace,monospace;font-size:20px;letter-spacing:3px}
+.device-session-row{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #f1ecf7}.device-session-row>svg{color:#906ec5;flex-shrink:0}
+.device-session-row>span{display:flex;flex:1;flex-direction:column;gap:5px;min-width:0}.device-session-row strong{overflow-wrap:anywhere}.device-session-row small{font-size:12px;color:#93859f}
+.device-revoke{display:flex;align-items:center;gap:6px;min-height:40px;border:0;background:transparent;color:#9b628c;cursor:pointer}
+.device-pairing-privacy{display:flex;align-items:flex-start;gap:6px;margin-top:18px!important}.device-pairing-privacy svg{margin-top:4px;flex-shrink:0}
+@media(max-width:700px){.device-pairing-panel{padding:18px}.device-pairing-result{flex-direction:column;align-items:flex-start;gap:8px}.device-sharing-row{align-items:flex-start;flex-direction:column}}

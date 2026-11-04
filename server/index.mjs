@@ -22,13 +22,17 @@ import {recognizeReminderConversation} from './reminder-conversation.mjs';
 import {recordPrivateInbound} from './private-inbound.mjs';
 import {applyBundledCapabilities,bundledCapabilityStatus,BASE_SKILLS} from './bundled-capabilities.mjs';
 import {applyUserMemory,memoryReceiptPrompt} from './builtin-memory.mjs';
+import {DeviceSessions,parseCookie,cookieHeader,removeCookie} from './device-sessions.mjs';
+import {DeviceNetwork,sameDeviceOrigin} from './device-network.mjs';
+import {requestIdentity,personalRoute} from './device-access.mjs';
 
 export const projectRoot=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 
-export async function startServer({root=projectRoot,dataRoot=join(root,'.data'),port=4318,host='127.0.0.1',cloudMode=false,cloudToken='',serverName='MioBot 云端',dev=false,onNotify=()=>{},fetcher=fetch}={}){
+export async function startServer({root=projectRoot,dataRoot=join(root,'.data'),port=4318,host='127.0.0.1',cloudMode=false,cloudToken='',serverName='MioBot 云端',dev=false,onNotify=()=>{},fetcher=fetch,sharingPort=4319}={}){
   const store=new Store(dataRoot),runtime=new AstrBot({root,store,fetcher}),connections=new Connections(store,runtime),runs=new Map(),scheduler=new Scheduler(store,{onNotify,deliver:t=>{const c=store.channel(t.channel);if(c.assistantId!==t.assistantId||c.status!=='verified'||!c.enabled||!c.supportProactive||!c.target)throw new Error('提醒接收渠道未通过验证');return connections.send(c.id,t.title);}});scheduler.recover();
   const care=new CareScheduler(store,runtime,{onNotify,isBusy:id=>runs.has(id),deliver:async(assistant,channelId,text)=>{const channel=store.channel(channelId);if(channel.assistantId!==assistant.id||channel.status!=='verified'||!channel.enabled||!channel.supportProactive)throw Error('主动关心接收渠道未通过验证');return connections.send(channelId,text);}});
   const deployment=new Deployment({store,runtime,isBusy:()=>runs.size>0||care.running.size>0,fetcher,cloudMode}),extensions=new Extensions({store,runtime});
+  const devices=new DeviceSessions({store});let deviceNetwork;
   const syncBundled=()=>{if(applyBundledCapabilities(store).changed)store.save();};
   syncBundled();
   const trustedScope=(chat,user)=>{const p=runtime.paths();return {assistantId:chat.assistantId,chatId:chat.id,ownerId:'local-user',channel:chat.origin==='channel'?chat.channelId:store.assistant(chat.assistantId).care?.deliveryChannel||'web',requestId:user.requestId||user.id,session:chat.nativeSession,files:store.state.files.filter(f=>chat.messages.some(m=>m.role==='user'&&m.fileIds?.includes(f.id))),python:{executable:p.python,env:p.home?{...process.env,PYTHONHOME:p.home,PYTHONPATH:p.packages}:process.env},userRequestedVoice:requestedMediaIntent(user.text,'voice',{button:user.voice===true}),userRequestedSticker:requestedMediaIntent(user.text,'stickers')};};
@@ -37,11 +41,20 @@ export async function startServer({root=projectRoot,dataRoot=join(root,'.data'),
   const cloudArchive=()=>[process.resourcesPath&&join(process.resourcesPath,'cloud-export',`miobot-cloud-${version}.tar.gz`),join(root,'release/cloud',`miobot-cloud-${version}.tar.gz`)].find(p=>p&&existsSync(p));
   const attachment=(kind,item,assistantId)=>({...item,url:`/api/media/${kind}/${item.id}?assistantId=${encodeURIComponent(assistantId)}`});
   let vite;if(dev||!existsSync(join(root,'dist/index.html'))){const {createServer}=await import('vite');vite=await createServer({root,server:{middlewareMode:true},appType:'spa'});}
-  const json=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));};
+  const json=(res,status,data)=>{if(res.destroyed||res.writableEnded)return;res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));};
   const body=async(req,limit=256000)=>{let chunks=[],size=0;for await(const chunk of req){size+=chunk.length;if(size>limit)throw new Error('提交内容过大');chunks.push(chunk);}try{return chunks.length?JSON.parse(Buffer.concat(chunks).toString()):{};}catch{throw Error('提交内容需要有效的JSON格式');}};
-  const runChat=async(c,b,res,{stream=false,retry=false}={})=>{
+  const runChat=async(c,b,res,{stream=false,retry=false,viewerDeviceId=null}={})=>{
     syncBundled();
     if(c.origin==='channel')throw Error('这是外部渠道的执行记录，请在原聊天渠道继续交谈，或新建应用内对话。');
+    if(b.requestId!==undefined&&(typeof b.requestId!=='string'||!b.requestId.trim()||b.requestId.length>100))throw Error('消息请求编号无效');
+    if(!retry&&b.requestId){
+      const prior=c.messages.find(m=>m.role==='user'&&m.requestId===b.requestId);
+      if(prior){
+        if(prior.text!==b.text||JSON.stringify(prior.fileIds||[])!==JSON.stringify(b.fileIds||[])||JSON.stringify(prior.stickerIds||[])!==JSON.stringify(b.stickerIds||[])||!!prior.voice!==!!b.voice||!!prior.webSearch!==!!b.webSearch)throw Object.assign(Error('同一个请求编号不能提交不同的消息'),{status:409});
+        const message=store.snapshot().chats.find(x=>x.id===c.id).messages.findLast(m=>m.replyTo===prior.id);
+        return json(res,200,{duplicate:true,requestId:b.requestId,message,runStatus:c.runStatus||'idle'});
+      }
+    }
     if(runs.has(c.id))throw new Error('这段对话还在回复，请先停止或等待完成');
     const a=store.assistant(c.assistantId);if(!a.enabled)throw new Error('请先启用这个助手');
     let user;
@@ -50,11 +63,19 @@ export async function startServer({root=projectRoot,dataRoot=join(root,'.data'),
       for(const [key,skill,registry] of [['fileIds','files',store.state.files],['stickerIds','stickers',store.state.stickers]]){if(b[key]!==undefined&&(!Array.isArray(b[key])||b[key].length>5||b[key].some(id=>typeof id!=='string')))throw Error('附件编号无效');if(b[key]?.length){if(!store.state.extensions[skill]||!a.skills.includes(skill))throw Error('请先开启并授权这位助手使用'+(skill==='files'?'文件阅读':'表情图库'));for(const id of b[key]){const item=registry.find(x=>x.id===id&&x.ownerId==='local-user'&&x.assistantId===a.id);if(!item||skill==='files'&&item.status!=='parsed')throw Error('附件不存在、未解析或不属于当前助手');}}}
       if(b.webSearch===true&&(!store.state.extensions.web||!a.skills.includes('web')))throw Error('请先配置、开启检索并授权这位助手使用');
       if(b.voice===true&&(!store.state.extensions.voice||!a.skills.includes('voice')))throw Error('请先配置、开启语音并授权这位助手使用');if(b.requestId&&c.messages.some(m=>m.role==='user'&&m.requestId===b.requestId))throw new Error('这条消息已提交，请使用重试或查看已有结果');user=store.message(c.id,'user',text,{status:'complete',requestId:String(b.requestId||randomUUID()).slice(0,100),fileIds:b.fileIds||[],stickerIds:b.stickerIds||[],webSearch:b.webSearch===true,voice:b.voice===true,attachments:{files:(b.fileIds||[]).map(id=>{const f=store.state.files.find(x=>x.id===id);return {id:f.id,name:f.name,status:f.status};}),stickers:(b.stickerIds||[]).map(id=>attachment('stickers',store.state.stickers.find(x=>x.id===id),a.id)).map(({path,ownerId,...x})=>x)}});}
-    const requestId=String(b.requestId||randomUUID()).slice(0,100),controller=new AbortController(),state={controller,cancelled:false};runs.set(c.id,state);c.runStatus='running';
+    const requestId=String(b.requestId||randomUUID()).slice(0,100),controller=new AbortController(),state={controller,cancelled:false,viewerDeviceId};runs.set(c.id,state);c.runStatus='running';
     const message=store.message(c.id,'assistant','',{status:'streaming',requestId,replyTo:user.id,source:'astrbot'});state.message=message;
-    const emit=e=>{if(stream&&!res.destroyed)res.write('data: '+JSON.stringify(e)+'\n\n');};
+    const emit=e=>{if(stream&&!state.detached&&!res.destroyed&&!res.writableEnded)res.write('data: '+JSON.stringify(e)+'\n\n');};
+    state.detachViewer=()=>{
+      state.detached=true;
+      if(res.destroyed||res.writableEnded)return;
+      if(!res.headersSent)return json(res,401,{error:'设备授权已结束，请重新配对。'});
+      res.end();
+    };
     if(stream){res.writeHead(200,{'Content-Type':'text/event-stream; charset=utf-8','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});emit({type:'start',requestId,messageId:message.id,message});}
-    const disconnected=()=>{if(!res.writableEnded){state.cancelled=true;controller.abort();void runtime.cancel(c);}};res.on('close',disconnected);
+    // A phone closing its viewer is not an instruction to cancel the server job.
+    // The durable row and /run remain available to every paired device.
+    const disconnected=()=>{state.detached=true;};res.on('close',disconnected);
     try{
       const memoryReceipt=applyUserMemory(store,c,user);
       if(memoryReceipt?.ok)message.memoryIds=[memoryReceipt.memory.id];
@@ -92,16 +113,43 @@ export async function startServer({root=projectRoot,dataRoot=join(root,'.data'),
     }catch(e){const cancelled=state.cancelled||controller.signal.aborted;message.status=cancelled?'cancelled':'error';message.error=cancelled?'回复已停止，可重试这条消息':runtime.safeError(e);if(!message.text)message.text=message.error;store.save();if(stream)emit({type:cancelled?'cancelled':'error',error:message.error,message});else json(res,cancelled?200:502,{error:message.error,message});}
     finally{runs.delete(c.id);c.runStatus='idle';store.save();res.off('close',disconnected);if(stream&&!res.writableEnded)res.end();}
   };
+  const detachDeviceViewers=id=>{if(id)for(const run of runs.values())if(run.viewerDeviceId===id)run.detachViewer();};
   const api=async(req,res,url)=>{
-    if(!cloudMode&&req.headers['x-personal-agent']!=='1')return json(res,403,{error:'请从本应用访问'});
-    const host=req.headers.host||'';
-    if(cloudMode){const supplied=Buffer.from(String(req.headers.authorization||'')),expected=Buffer.from('Bearer '+cloudToken);if(!cloudToken||supplied.length!==expected.length||!timingSafeEqual(supplied,expected))return json(res,401,{error:'请使用有效的云端连接密钥'});if(req.headers.origin){let origin;try{origin=new URL(req.headers.origin);}catch{return json(res,403,{error:'无效来源'});}if(origin.host!==host)return json(res,403,{error:'不允许跨站修改数据'});}}
-    else{if(!/^(127\.0\.0\.1|localhost):\d+$/.test(host))return json(res,403,{error:'无效的访问地址'});if(req.headers.origin&&req.headers.origin!==`http://${host}`)return json(res,403,{error:'不允许跨站修改本机数据'});}
     const path=url.pathname,method=req.method;
+    if(!sameDeviceOrigin(req))return json(res,403,{error:'不允许跨站访问此后台'});
+    const identity=requestIdentity(req,{devices,cloudMode,cloudToken});
+    const localDeviceOnCloud=!cloudMode&&deployment.mode==='cloud'&&!!identity?.device;
+    const directCloudError='这台电脑已切换到云端。请在电脑重新生成云端配对链接，用手机直接连接云端后台。';
+    const secure=req.socket.encrypted===true||req.headers['x-forwarded-proto']==='https';
+    if(path==='/api/device-access'&&method==='GET')return json(res,200,{product:'MioBot',apiVersion:1,instanceId:store.state.instanceId,name:cloudMode?serverName:'我的 MioBot',authenticated:!!identity&&!localDeviceOnCloud,owner:identity?.owner===true,...(identity?.device&&!localDeviceOnCloud?{device:identity.device}:{}),...(localDeviceOnCloud?{reconnectRequired:true,error:directCloudError}:{}),mode:cloudMode?'cloud':deployment.mode,notifications:{inbox:true,push:false}});
+    if(path==='/api/device-sessions'&&method==='POST'){
+      if(!cloudMode&&deployment.mode==='cloud')return json(res,409,{error:directCloudError,code:'DIRECT_CLOUD_REQUIRED',reconnectRequired:true});
+      if(req.headers['x-personal-agent']!=='1')return json(res,403,{error:'请在 MioBot 配对页面连接'});
+      const input=await body(req,4096),result=devices.exchange({code:input.code,label:input.label},req.socket.remoteAddress||'unknown');
+      res.setHeader('Set-Cookie',cookieHeader(result.token,{secure}));return json(res,201,{device:result.device,instanceId:store.state.instanceId,name:cloudMode?serverName:'我的 MioBot'});
+    }
+    if(!identity)return json(res,cloudMode||req.headers.cookie?401:403,{error:'请先配对这台设备，或使用有效的后台连接密钥'});
+    if(localDeviceOnCloud&&!(path==='/api/device-session'&&method==='DELETE'))return json(res,403,{error:directCloudError,code:'DIRECT_CLOUD_REQUIRED',reconnectRequired:true});
+    if(!identity.owner&&!personalRoute(path,method))return json(res,403,{error:'这台设备可管理聊天、记忆和安排；后台与设备授权请在电脑上管理'});
+    if(!identity.owner&&!['GET','HEAD'].includes(method)&&req.headers['x-personal-agent']!=='1')return json(res,403,{error:'请从 MioBot 页面提交操作'});
+    if(path==='/api/device-session'){
+      if(method==='GET')return json(res,200,{owner:identity.owner,device:identity.device||null,instanceId:store.state.instanceId});
+      if(method==='DELETE'){if(identity.token){devices.logout(identity.token);detachDeviceViewers(identity.device?.id);}res.setHeader('Set-Cookie',removeCookie({secure}));return json(res,200,{ok:true});}
+    }
+    if(path==='/api/device-sharing'){
+      if(!identity.owner)return json(res,403,{error:'请在电脑上管理手机连接'});
+      if(cloudMode)return json(res,200,{enabled:true,cloud:true,urls:[]});
+      if(method==='POST'){const input=await body(req);if(typeof input.enabled!=='boolean')throw Error('请明确选择是否允许手机连接');return json(res,200,input.enabled?await deviceNetwork.enable():await deviceNetwork.disable());}
+      if(method==='GET')return json(res,200,deviceNetwork.status());
+    }
     if(path==='/api/deployment/guide'&&method==='GET')return json(res,200,{version,packageAvailable:!!cloudArchive(),packageUrl:'/api/deployment/package',guide:readFileSync(join(root,'README-cloud-client.md'),'utf8').replaceAll('{{version}}',version)});
     if(path==='/api/deployment/package'&&method==='GET'){const archive=cloudArchive();if(!archive)return json(res,404,{error:'当前安装包未附带云端运行包，请使用项目打包入口。'});res.writeHead(200,{'Content-Type':'application/gzip','Cache-Control':'private, no-store','Content-Disposition':`attachment; filename="miobot-cloud-${version}.tar.gz"`});res.end(readFileSync(archive));return;}
     if(path==='/api/deployment'||path.startsWith('/api/deployment/')){const input=method==='POST'?await body(req):{};if(path==='/api/deployment')return json(res,200,await deployment.status());if(path.endsWith('/connect')&&method==='POST')return json(res,200,await deployment.connect(input));if(path.endsWith('/local')&&method==='POST')return json(res,200,await deployment.useLocal(input));return json(res,404,{error:'连接操作不存在'});}
     if(!cloudMode&&deployment.mode==='cloud')return deployment.proxy(req,res,url.pathname+url.search);
+    if(path==='/api/devices'&&method==='GET')return json(res,200,{devices:devices.list(),instanceId:store.state.instanceId});
+    if(path==='/api/devices/pairings'&&method==='POST'){const input=await body(req,4096);return json(res,201,{...devices.issuePairing({label:input.label}),instanceId:store.state.instanceId});}
+    const deviceMatch=path.match(/^\/api\/devices\/([^/]+)$/);
+    if(deviceMatch&&method==='DELETE'){const device=devices.revoke(deviceMatch[1]);detachDeviceViewers(device?.id);return json(res,200,{ok:true,device});}
     if(path==='/api/cloud/info'&&method==='GET')return json(res,200,{product:'MioBot',apiVersion:1,version,instanceId:store.state.instanceId,name:serverName});
     if(path==='/api/state'&&method==='GET'){syncBundled();return json(res,200,{...store.snapshot(),bundledCapabilities:bundledCapabilityStatus(store,runtime),runtime:{status:runtime.status,error:runtime.error,installed:runtime.isInstalled()}});}
     const b=['POST','PATCH','PUT','DELETE'].includes(method)?await body(req,(path==='/api/files'||path==='/api/stickers/upload')?16*1024*1024:256000):{};
@@ -154,11 +202,13 @@ export async function startServer({root=projectRoot,dataRoot=join(root,'.data'),
     if(path==='/api/chats'&&method==='POST')return json(res,201,store.createChat(b.assistantId));
     const chatMatch=path.match(/^\/api\/chats\/([^/]+)$/);
     if(chatMatch&&method==='PATCH'){const c=store.chat(chatMatch[1]);if(runs.has(c.id))throw new Error('请先停止当前回复再切换模型');if(b.connectionId!==undefined){if(b.connectionId)store.connection(b.connectionId);c.connectionId=b.connectionId||null;}store.save();return json(res,200,c);}
+    const runMatch=path.match(/^\/api\/chats\/([^/]+)\/run$/);
+    if(runMatch&&method==='GET'){const c=store.chat(runMatch[1]),message=store.snapshot().chats.find(x=>x.id===c.id).messages.findLast(m=>m.role==='assistant');return json(res,200,{status:runs.has(c.id)?'running':'idle',requestId:message?.requestId,messageId:message?.id,message});}
     const streamMatch=path.match(/^\/api\/chats\/([^/]+)\/(messages\/stream|retry\/stream|cancel)$/);
-    if(streamMatch&&method==='POST'){const c=store.chat(streamMatch[1]);if(streamMatch[2]==='cancel'){const run=runs.get(c.id);if(run){run.cancelled=true;run.controller.abort();await runtime.cancel(c);}return json(res,200,{ok:true,status:run?'cancelling':'idle'});}return runChat(c,b,res,{stream:true,retry:streamMatch[2]==='retry/stream'});}
+    if(streamMatch&&method==='POST'){const c=store.chat(streamMatch[1]);if(streamMatch[2]==='cancel'){const run=runs.get(c.id);if(run&&b.requestId!==undefined&&b.requestId!==run.message?.requestId)return json(res,409,{error:'这次停止请求已过期，不能停止新的回复。'});if(run){run.cancelled=true;run.controller.abort();await runtime.cancel(c);}return json(res,200,{ok:true,status:run?'cancelling':'idle'});}return runChat(c,b,res,{stream:true,retry:streamMatch[2]==='retry/stream',viewerDeviceId:identity.device?.id});}
     const sendMatch=path.match(/^\/api\/chats\/([^/]+)\/messages$/);
     if(sendMatch&&method==='POST'){
-      return runChat(store.chat(sendMatch[1]),b,res);
+      return runChat(store.chat(sendMatch[1]),b,res,{viewerDeviceId:identity.device?.id});
     }
     if(path==='/api/memories'&&method==='POST'){const m={id:randomUUID(),content:boundedText(b.content,'记忆',2000),assistantId:b.assistantId,category:['偏好','目标','进度'].includes(b.category)?b.category:'偏好',shared:b.shared===true,source:'手动添加',updatedAt:new Date().toISOString()};store.assistant(m.assistantId);store.state.memories.unshift(m);store.save();return json(res,201,{...m,syncWarnings:await connections.refreshBindings(m.shared?null:[m.assistantId])});}
     const memoryMatch=path.match(/^\/api\/memories\/([^/]+)$/);
@@ -214,7 +264,9 @@ export async function startServer({root=projectRoot,dataRoot=join(root,'.data'),
     const active=runs.get(chat.id);active.message.toolCalls||=[];active.message.toolCalls.push(trace);store.state.capabilities.game.lastRun={...trace,assistantId:chat.assistantId};store.save();return json(res,200,result);
   }if(url.pathname.startsWith('/api/'))return await api(req,res,url);if(vite)return vite.middlewares(req,res);let path=resolve(root,'dist','.'+decodeURIComponent(url.pathname));if(relative(join(root,'dist'),path).startsWith('..')){res.writeHead(403);return res.end();}if(!existsSync(path)||!extname(path))path=join(root,'dist/index.html');const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png'};res.writeHead(200,{'Content-Type':mime[extname(path)]||'application/octet-stream','X-Content-Type-Options':'nosniff'});res.end(readFileSync(path));}catch(e){json(res,e.status||400,{error:runtime.safeError(e),...(e.code?{code:e.code}:{})});}});
   await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(port,host,resolve);});const appUrl=`http://127.0.0.1:${server.address().port}`;runtime.toolBridge={url:appUrl,token:randomBytes(32).toString('hex')};
+  deviceNetwork=new DeviceNetwork({store,port:sharingPort,listener:(req,res)=>server.emit('request',req,res)});
+  if(!cloudMode&&store.state.deviceSharing?.enabled)await deviceNetwork.enable().catch(()=>{});
   const timer=setInterval(()=>{if(cloudMode||deployment.mode==='local'){scheduler.tick();void care.tick();}},1000);timer.unref();
-  return {server,store,runtime,scheduler,care,deployment,extensions,url:appUrl,close:async()=>{clearInterval(timer);care.close();deployment.close();for(const run of runs.values()){run.cancelled=true;run.controller.abort();}runtime.stop();await vite?.close();await new Promise(r=>server.close(r));}};
+  return {server,store,runtime,scheduler,care,deployment,extensions,devices,deviceNetwork,url:appUrl,close:async()=>{clearInterval(timer);care.close();deployment.close();for(const run of runs.values()){run.cancelled=true;run.controller.abort();}runtime.stop();await deviceNetwork.disable({persist:false});await vite?.close();server.closeAllConnections?.();await new Promise(r=>server.close(r));}};
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){const app=await startServer({dev:process.argv.includes('--dev'),port:Number(process.env.PERSONAL_AGENT_PORT||4318)});console.log('MioBot: '+app.url);for(const signal of ['SIGINT','SIGTERM'])process.on(signal,async()=>{await app.close();process.exit(0);});}
