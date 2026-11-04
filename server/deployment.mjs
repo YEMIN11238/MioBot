@@ -41,6 +41,7 @@ export class Deployment{
     if(this.isBusy())throw Error('当前有新的回复正在进行，连接已验证，请稍后再切换');
     const at=new Date().toISOString();
     for(const t of this.store.state.tasks)if(t.status==='pending'){t.status='paused';t.logs.push({at,text:'已切换云端，本机任务暂停；没有自动迁移。'});}
+    for(const w of this.store.state.workflows||[])if(w.status==='active'){w.status='paused';w.revision++;w.bindingStatus='needs_runtime';}
     for(const a of this.store.state.assistants)if(a.care?.enabled)a.care.enabled=false;
     const child=this.runtime.child;this.runtime.stop();
     if(child&&child.exitCode===null)await new Promise(resolve=>{const timeout=setTimeout(resolve,5000);child.once('exit',()=>{clearTimeout(timeout);resolve();});});

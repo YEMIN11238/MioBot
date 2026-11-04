@@ -11,13 +11,13 @@ function fixture(){
 
 test('base capabilities are mandatory and idempotent without changing persona, enabled state, specialized skills, tasks or care',()=>{
   const {store,saves}=fixture(),before=structuredClone(store.state);
-  assert.deepEqual(BASE_SKILLS,['memory','reminders','humanize','web']);assert.equal(Object.isFrozen(BASE_SKILLS),true);
+  assert.deepEqual(BASE_SKILLS,['memory','reminders','humanize','web','workflows']);assert.equal(Object.isFrozen(BASE_SKILLS),true);
   assert.deepEqual(applyBundledCapabilities(store),{changed:true});
   for(const assistant of store.state.assistants){for(const id of BASE_SKILLS)assert.ok(assistant.skills.includes(id));assert.equal(assistant.persona,before.assistants.find(a=>a.id===assistant.id).persona);}
   assert.deepEqual(store.state.assistants[1].skills,['minecraft','voice','stickers',...BASE_SKILLS]);
   assert.equal(store.state.assistants[2].enabled,false);
   assert.deepEqual(store.state.tasks,before.tasks);assert.deepEqual(store.state.assistants.map(a=>a.care),before.assistants.map(a=>a.care));
-  assert.deepEqual(store.state.extensions,{memory:true,reminders:true,web:true,voice:false,stickers:true,files:false});
+  assert.deepEqual(store.state.extensions,{memory:true,reminders:true,web:true,voice:false,stickers:true,files:false,workflows:true});
   assert.deepEqual(applyBundledCapabilities(store),{changed:false});assert.equal(saves(),0);
 });
 

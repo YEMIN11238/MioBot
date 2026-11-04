@@ -20,6 +20,14 @@ export function personalRoute(path,method){
   if(path==='/api/device-session')return ['GET','DELETE'].includes(method);
   if(path==='/api/state'||path==='/api/deployment'||path==='/api/extensions')return method==='GET';
   if(path.startsWith('/api/media/'))return ['GET','HEAD'].includes(method);
+  if(path==='/api/push')return method==='GET';
+  if(path==='/api/push/subscription')return ['POST','DELETE'].includes(method);
+  if(path==='/api/push/test')return method==='POST';
+  if(path==='/api/rss/sources')return ['GET','POST'].includes(method);
+  if(/^\/api\/rss\/sources\/[^/]+$/.test(path))return method==='DELETE';
+  if(path==='/api/workflows')return ['GET','POST'].includes(method);
+  if(/^\/api\/workflows\/[^/]+$/.test(path))return method==='PATCH';
+  if(/^\/api\/workflows\/[^/]+\/run$/.test(path))return method==='POST';
   if(path==='/api/notifications/read')return method==='POST';
   if(path==='/api/chats')return method==='POST';
   if(/^\/api\/chats\/[^/]+(?:\/(?:messages(?:\/stream)?|retry\/stream|cancel|run))?$/.test(path))return ['GET','POST','PATCH'].includes(method);

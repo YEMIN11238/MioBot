@@ -1,5 +1,14 @@
 # Third-party components
 
+## Scheduled work, RSS parsing and Web Push (0.8.0)
+
+- AstrBot CronJobManager — part of the pinned modified AstrBot 4.29.3 runtime described below. MioBot's `astrbot_plugin_miobot_workflows` reuses its native cron/date triggers and persistent basic-job storage. The MioBot adapter reattaches callbacks after restart and submits confirmed occurrence IDs to the authenticated local host; MioBot owns the execution queue, model/tool authorization, result records and outbound acceptance. It does not start a second RSS scheduler, load the RSSHub WebUI or grant native direct-send cron tools.
+- `astrbot_plugin_rsshub` 2.1.4 — author FlanChanXwO, AGPL-3.0. Audited source: https://github.com/AstrBot-Elementary-School/astrbot_plugin_rsshub at revision `a047f46e47cb2a0f7a795f30b9f82ae027005846`; its own metadata names https://github.com/FlanChanXwO/astrbot_plugin_rsshub as the upstream repository. MioBot retains and actually calls the **unchanged** `XMLFeedParser` and `EntryParsed` / `Enclosure` source modules. Original LICENSE, exact source hashes and scope are in [integrations/rsshub](integrations/rsshub/NOTICE.md). MioBot adds the bounded stdin/stdout parser bridge, XML entity checks, public-HTTPS fetching, source isolation, snapshots and delivery-acknowledged dedup. The upstream scheduler, repositories, media handling, automatic discovery, outbound senders and Plugin Pages/WebUI are not bundled.
+- RSS parser dependencies — `feedparser==6.0.14` and `feedparser-sgmllib==2.1.0`, plus existing managed-runtime Pydantic and defusedxml. Their own notices and licenses remain in installed package metadata. No RSS account, private feed URL, user subscription database or access token is copied.
+- `web-push` 3.6.7 — https://github.com/web-push-libs/web-push — Copyright 2015 Marco Castelluccio, MPL-2.0, as retained in the npm distribution LICENSE and package-lock.json. Used for standard VAPID/encrypted Web Push requests. MioBot implements its own subscription/device boundaries, generic notification payloads, permission UI, manifest and Service Worker; no T3 push infrastructure, native iOS/Android app, existing device subscription or VAPID private key is included.
+
+Native timer and parser validation uses temporary stores and local fixture services. It does not establish physical iPhone delivery, Linux public deployment, real-platform acceptance or performance improvements.
+
 ## Optional deployed-bot plugin bundles (0.7.0)
 
 Nine source bundles were audited read-only from the owner's existing deployment on 2026-11-04 and adapted for managed, explicitly enabled QQ channels. Original authors, licenses, source checksums and modifications are retained in each `integrations/cloud-plugins/<id>/NOTICE.md` and its `PROVENANCE.json` or `CLOUD_SOURCE.json`. No credentials, account sessions, private media or preexisting plugin databases are distributed.

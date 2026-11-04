@@ -1,0 +1,33 @@
+{
+  "repository": "https://github.com/AstrBot-Elementary-School/astrbot_plugin_rsshub",
+  "upstreamRepository": "https://github.com/FlanChanXwO/astrbot_plugin_rsshub",
+  "version": "2.1.4",
+  "revision": "a047f46e47cb2a0f7a795f30b9f82ae027005846",
+  "license": "AGPL-3.0",
+  "author": "FlanChanXwO",
+  "scope": "Unchanged XMLFeedParser and EntryParsed modules; no scheduler, platform sender, media stack or Plugin Pages installed",
+  "sourceFiles": [
+    {
+      "path": "src/infrastructure/fetcher/rss/xml_parser.py",
+      "sha256": "8fe499711c32385089fa424b8d68c6bc438360d7e71b92a039d35282ac08444e"
+    },
+    {
+      "path": "src/infrastructure/fetcher/rss/models.py",
+      "sha256": "e53d57aabeadced0f7c1ea6c006aa1455be59b473d9f1b4c3dab040698b5ac55"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "f440d399276dcbd8a845dee6e873a54c1f59ff44b502b45f3bc9352224ed5789"
+    }
+  ],
+  "integrationFiles": [
+    "parse_feed.py",
+    "NOTICE.md"
+  ],
+  "dependencies": {
+    "feedparser": "6.0.14",
+    "feedparser-sgmllib": "2.1.0",
+    "pydantic": "existing pinned runtime",
+    "defusedxml": "existing pinned runtime"
+  }
+}

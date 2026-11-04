@@ -4,7 +4,7 @@ import {startServer} from '../server/index.mjs';import {Store} from '../server/s
 
 async function fixture(t){
   const root=mkdtempSync(join(tmpdir(),'miobot-bundled-http-')),network=[];
-  const store=new Store(root);for(const id of ['memory','reminders','web'])store.state.extensions[id]=false;
+  const store=new Store(root);for(const id of ['memory','reminders','web','workflows'])store.state.extensions[id]=false;
   store.state.tasks=[{id:'paused',assistantId:'daily',status:'paused',channel:'web',dueAt:new Date(Date.now()+86400000).toISOString(),logs:[]}];store.save();
   const app=await startServer({dataRoot:root,port:0,fetcher:async input=>{network.push(String(input));throw Error('fixture native engine is not started');}});
   t.after(async()=>{await app.close();rmSync(root,{recursive:true,force:true});});
@@ -13,10 +13,10 @@ async function fixture(t){
 
 test('fresh and migrated HTTP instances keep base capabilities always available without restoring paused work',async t=>{
   const {app,api}=await fixture(t);const state=(await api('/state')).body;
-  for(const assistant of state.assistants)for(const skill of ['memory','reminders','humanize','web'])assert.ok(assistant.skills.includes(skill));
-  for(const id of ['memory','reminders','web']){assert.equal(state.extensions[id],true);assert.equal((await api('/extensions/'+id,'PATCH',{enabled:false})).status,409);}
+  for(const assistant of state.assistants)for(const skill of ['memory','reminders','humanize','web','workflows'])assert.ok(assistant.skills.includes(skill));
+  for(const id of ['memory','reminders','web','workflows']){assert.equal(state.extensions[id],true);assert.equal((await api('/extensions/'+id,'PATCH',{enabled:false})).status,409);}
   assert.equal(state.bundledCapabilities.web.status,'needs_configuration');assert.equal(state.bundledCapabilities.web.tested,false);
-  const edited=await api('/assistants/game','PATCH',{skills:[]});assert.equal(edited.status,200);assert.deepEqual(new Set(edited.body.skills),new Set(['memory','reminders','humanize','web']));
+  const edited=await api('/assistants/game','PATCH',{skills:[]});assert.equal(edited.status,200);assert.deepEqual(new Set(edited.body.skills),new Set(['memory','reminders','humanize','web','workflows']));
   const created=await api('/assistants','POST',{name:'Fresh bot',skills:[],persona:'fixture persona'});assert.equal(created.status,201);assert.ok(created.body.skills.includes('web'));
   assert.equal(app.store.state.tasks[0].status,'paused');assert.equal(app.store.assistant('daily').care.enabled,false);
 });

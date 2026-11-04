@@ -12,7 +12,7 @@ import {startServer} from '../server/index.mjs';
 const root=resolve(import.meta.dirname,'..'),data=mkdtempSync(join(tmpdir(),'miobot-bundled-defaults-'));
 const artifact=join(root,'artifacts/bundled-defaults-20261103/core-memory-native-e2e.json');
 const KEY='offline-bundled-fixture-not-a-real-key',MODEL='fixture-bundled-chat',SECRET='紫云喝可乐',CAMP='月光小屋';
-const BASE=['memory','reminders','humanize','web'],CORE_TOOLS=['miobot_schedule_reminder','miobot_list_reminders','miobot_cancel_reminder','miobot_search_web'].sort();
+const BASE=['memory','reminders','humanize','web','workflows'],CORE_TOOLS=['miobot_schedule_reminder','miobot_list_reminders','miobot_cancel_reminder','miobot_search_web','miobot_schedule_workflow','miobot_list_workflows','miobot_cancel_workflow'].sort();
 const calls=[],steps=[],network=[],bridge=[];let app,active,fixtureError,report;const personas=new Map();
 const textOf=value=>typeof value==='string'?value:Array.isArray(value)?value.map(part=>part?.text||'').join('\n'):'';
 function tomorrow(createdAt){const day=new Date(Date.parse(createdAt)+86400000);return new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(day)+'T07:00:00+08:00';}
@@ -55,7 +55,7 @@ await new Promise(r=>model.listen(0,'127.0.0.1',r));const picker=createServer();
 async function api(path,method='GET',body){const response=await fetch(app.url+path,{method,headers:{'Content-Type':'application/json','X-Personal-Agent':'1'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(90000)});const value=await response.json();assert.ok(response.ok,JSON.stringify({path,status:response.status,error:value.error}));return value;}
 function baseState(state){
   for(const id of ['daily','game','career']){const assistant=state.assistants.find(item=>item.id===id);assert.ok(assistant);for(const skill of BASE)assert.ok(assistant.skills.includes(skill),id+' default lacks '+skill);assert.equal(assistant.persona,personas.get(id));}
-  for(const id of ['memory','reminders','web'])assert.equal(state.extensions[id],true);
+  for(const id of ['memory','reminders','web','workflows'])assert.equal(state.extensions[id],true);
   for(const id of ['files','voice','stickers'])assert.equal(state.extensions[id],false);
   assert.equal(state.bundledCapabilities.memory.status,'ready');assert.equal(state.bundledCapabilities.reminders.status,'ready');assert.equal(state.bundledCapabilities.web.status,'needs_configuration');assert.equal(state.bundledCapabilities.web.tested,false);assert.equal(state.bundledCapabilities.web.verificationStatus,'untested');assert.equal(state.capabilities.memory.embeddingProviderId,undefined);
 }
